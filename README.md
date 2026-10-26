@@ -16,11 +16,6 @@ Vibe-coded electrical CAD for wiring diagrams, control panels and complete schem
 - **AI assistant:** describe a circuit ("reverse a motor from two places without a LOGO!") and it builds the project. It checks the result and fixes mistakes automatically. You can teach it your own design rules.
 - **PDF export** of the whole set.
 
-**LAZY Logo**, a function-block editor and simulator for the Siemens LOGO!:
-- **Build and simulate:** function-block diagrams with a live simulator (NC inputs, push buttons, timers, counters).
-- **Behaviour tests:** "press I1 → Q1 must turn on".
-- **AI assistant:** writes the program and its tests, and repairs it until the tests pass.
-- **Linked to a schematic:** link a LAZY Electrical schematic so the AI uses your real wiring, and it checks interlocks (e.g. reversing contactors never on together).
 
 ## Try it
 
