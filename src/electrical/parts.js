@@ -32,6 +32,7 @@ LE.parts = (function () {
     { part: 'GEN-ISO-25-3P', maker: G, desc: 'Hoofdschakelaar 25 A 3P, deurgreep', sym: ['isol3'], w: 45, h: 90, d: 85, loss: 2 },
     { part: 'GEN-PSU-24V-2.5A', maker: G, desc: 'Voeding 100–240 V AC / 24 V DC 2,5 A (60 W)', sym: ['psu'], w: 36, h: 90, d: 60, loss: 7 },
     { part: 'GEN-PSU-24V-5A', maker: G, desc: 'Voeding 100–240 V AC / 24 V DC 5 A (120 W)', sym: ['psu'], w: 54, h: 90, d: 60, loss: 12 },
+    { part: 'GEN-IR-24V-1CO', maker: 'Generiek', desc: 'Interfacerelais 24 V DC, 1 wisselcontact 6 A, smalle uitvoering (bv. per PLC-uitgang)', sym: ['coil'], contacts: { NO: 1, NC: 1 }, w: 6.2, h: 94, d: 70, loss: 0.2 },
     { part: 'GEN-PB-NO-GN', maker: G, desc: 'Drukknop groen, 1 NO, Ø22 mm', sym: ['pb_no'], contacts: { NO: 1 }, w: 30, h: 30, d: 50, loss: 0 },
     { part: 'GEN-PB-NC-RD', maker: G, desc: 'Drukknop rood, 1 NC, Ø22 mm', sym: ['pb_nc'], contacts: { NC: 1 }, w: 30, h: 30, d: 50, loss: 0 },
     { part: 'GEN-ES-NC', maker: G, desc: 'Noodstop paddenstoel Ø40, draai-ontgrendeling, 1 NC', sym: ['estop'], contacts: { NC: 1 }, w: 40, h: 40, d: 60, loss: 0 },
@@ -42,9 +43,10 @@ LE.parts = (function () {
     { part: 'GEN-TB-END', maker: G, desc: 'Eindplaat voor doorgangsklem', sym: [], w: 1, h: 50, d: 40, loss: 0 },
     { part: 'GEN-DIN-35', maker: G, desc: 'Montagerail 35 mm (per meter)', sym: [], w: 1000, h: 35, d: 7.5, loss: 0 },
     { part: 'GEN-DUCT-40x60', maker: G, desc: 'Bedradingskoker 40 x 60 mm (per meter)', sym: [], w: 1000, h: 40, d: 60, loss: 0 },
-    { part: '6ED1 052-1MD08-0BA1', maker: 'Siemens', desc: 'LOGO! 12/24RCE, 8 DI (4 AI), 4 DO relais 10 A', sym: ['plc'], io: { DI: 8, DO: 4 }, w: 71.5, h: 90, d: 60, loss: 2 },
-    { part: '6ED1 052-1HB08-0BA1', maker: 'Siemens', desc: 'LOGO! 24RCE, 8 DI, 4 DO relais 10 A', sym: ['plc'], io: { DI: 8, DO: 4 }, w: 71.5, h: 90, d: 60, loss: 2 },
-    { part: '6ED1 052-1CC08-0BA1', maker: 'Siemens', desc: 'LOGO! 24CE, 8 DI (4 AI), 4 DO transistor 0,3 A', sym: ['plc'], io: { DI: 8, DO: 4 }, w: 71.5, h: 90, d: 60, loss: 2 }
+    { part: '6ED1 052-1CC00-0BA5', maker: 'Siemens', desc: 'LOGO! 24 (0BA5), 8 DI, 4 DO transistor 0,3 A', sym: ['plc', 'logo'], io: { DI: 8, DO: 4 }, transistor: true, w: 72, h: 90, d: 55, loss: 2 },
+    { part: '6ED1 052-1MD08-0BA1', maker: 'Siemens', desc: 'LOGO! 12/24RCE, 8 DI (4 AI), 4 DO relais 10 A', sym: ['plc', 'logo'], io: { DI: 8, DO: 4 }, w: 71.5, h: 90, d: 60, loss: 2 },
+    { part: '6ED1 052-1HB08-0BA1', maker: 'Siemens', desc: 'LOGO! 24RCE, 8 DI, 4 DO relais 10 A', sym: ['plc', 'logo'], io: { DI: 8, DO: 4 }, w: 71.5, h: 90, d: 60, loss: 2 },
+    { part: '6ED1 052-1CC08-0BA1', maker: 'Siemens', desc: 'LOGO! 24CE, 8 DI (4 AI), 4 DO transistor 0,3 A', sym: ['plc', 'logo'], io: { DI: 8, DO: 4 }, transistor: true, w: 71.5, h: 90, d: 60, loss: 2 }
   ];
   let extra = [];
   /* the project's own parts (imported or typed in) come first */

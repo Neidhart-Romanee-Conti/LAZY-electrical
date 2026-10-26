@@ -139,8 +139,13 @@ LE.render = (function () {
       return;
     }
     if (d.role === 'ref') {
-      const lines = [p.name || '?'].concat((A.refInfo[it.id] || []).map((r) => '/' + r));
-      lines.forEach((ln, i) => c.t(b[2] + 0.2, b[1] + 0.45 + i * 0.5, ln, i ? REF : DESC, { bold: i === 0 }));
+      /* upright arrow: name and destination written vertically under the arrow (rows of arrows stay readable) */
+      const refs = (A.refInfo[it.id] || []).map((r) => '/' + r).join(' ');
+      if (vert) c.t(it.x + 0.15, b[3] + 0.25, (p.name || '?') + (refs ? '  ' + refs : ''), DESC, { rot: 90, a: 'end' });
+      else {
+        c.t(b[2] + 0.2, b[1] + 0.45, p.name || '?', DESC, { bold: true });
+        if (refs) c.t(b[2] + 0.2, b[1] + 0.95, refs, REF);
+      }
       return;
     }
     if (d.role === 'plain') return;
@@ -175,18 +180,18 @@ LE.render = (function () {
   function mirrorLines(s) {
     const g = {};
     s.dev.slaves.forEach((x) => {
-      const k = x.d.kind, name = k === 'main' ? 'M' : k === 'DI' ? 'IN' : k === 'DO' ? 'OUT' : /NC$/.test(k) ? 'NC' : 'NO';
+      const k = x.d.kind, name = k === 'main' ? 'H' : k === 'DI' ? 'IN' : k === 'DO' ? 'UIT' : /NC$/.test(k) ? 'V' : 'M';
       (g[name] = g[name] || []).push(k === 'DI' || k === 'DO' ? ((x.it.p || {}).addr || '') + '/' + x.ref : '/' + x.ref);
-      if (k === 'CO') (g.NC = g.NC || []).push('/' + x.ref);
+      if (k === 'CO') (g.V = g.V || []).push('/' + x.ref);
     });
     return Object.keys(g).map((k) => k + ' ' + g[k].join(' '));
   }
   function drawMirror(c, P, pg, A, s, b) {
     const dv = s.dev, cols = [];
-    if (s.d.id === 'plc') {
+    if (s.d.id === 'plc' || s.d.id === 'logo') {
       const di = [], dq = [];
       dv.slaves.forEach((x) => (x.d.kind === 'DI' ? di : dq).push(((x.it.p || {}).addr || '') + ' ' + x.ref));
-      cols.push(['IN', di], ['OUT', dq]);
+      cols.push(['IN', di], ['UIT', dq]);
     } else {
       const m = [], no = [], nc = [];
       dv.slaves.forEach((x) => {
@@ -196,13 +201,14 @@ LE.render = (function () {
         else if (k === 'NC' || k === 'tNC' || k === 'thNC') nc.push(x.ref);
         else if (k === 'CO') { no.push(x.ref); nc.push(x.ref); }
       });
-      if (m.length || s.d.id === 'coil') cols.push(['M', m]);
-      cols.push(['NO', no], ['NC', nc]);
+      /* H = hoofdcontacten, M = maakcontacten (NO), V = verbreekcontacten (NC) */
+      if (m.length || s.d.id === 'coil') cols.push(['H', m]);
+      cols.push(['M', no], ['V', nc]);
     }
     /* below the nearest potential rail under the device, otherwise right under the symbol */
     const rails = pg.items.filter((r) => r.k === 'pot' && r.y > b[3] - 0.01 && s.it.x >= Math.min(r.x1, r.x2) && s.it.x <= Math.max(r.x1, r.x2));
     const y0 = (rails.length ? Math.max(...rails.map((r) => r.y)) : b[3]) + 0.9;
-    const w = s.d.id === 'plc' ? 2.2 : 1.6, x0 = s.it.x - (cols.length * w) / 2;
+    const w = s.d.id === 'plc' || s.d.id === 'logo' ? 2.2 : 1.6, x0 = s.it.x - (cols.length * w) / 2;
     const rows = Math.max(1, ...cols.map((x) => x[1].length));
     cols.forEach((col, i) => {
       const x = x0 + i * w;

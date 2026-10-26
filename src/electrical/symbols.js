@@ -82,8 +82,8 @@ LE.symbols = (function () {
   def('nc_ton', Object.assign(contact('NC', 'ton'), { name: 'Verbreekcontact opkomend vertraagd', cat: C, role: 'slave', kind: 'tNC', letter: 'K', pins: pin2('15', '16'), h: 2 }));
   def('no_tof', Object.assign(contact('NO', 'tof'), { name: 'Maakcontact afvallend vertraagd', cat: C, role: 'slave', kind: 'tNO', letter: 'K', pins: pin2('17', '18'), h: 2 }));
   def('nc_tof', Object.assign(contact('NC', 'tof'), { name: 'Verbreekcontact afvallend vertraagd', cat: C, role: 'slave', kind: 'tNC', letter: 'K', pins: pin2('15', '16'), h: 2 }));
-  def('th_nc', Object.assign(contact('NC', 'thermal'), { name: 'Thermisch contact NC (95-96)', cat: C, role: 'slave', kind: 'thNC', letter: 'F', pins: pin2('95', '96'), h: 2 }));
-  def('th_no', Object.assign(contact('NO', 'thermal'), { name: 'Thermisch contact NO (97-98)', cat: C, role: 'slave', kind: 'thNO', letter: 'F', pins: pin2('97', '98'), h: 2 }));
+  def('th_nc', Object.assign(contact('NC', 'thermal'), { name: 'Thermisch contact NC (95-96)', cat: C, role: 'slave', kind: 'thNC', letter: 'B', old: 'F', pins: pin2('95', '96'), h: 2 }));
+  def('th_no', Object.assign(contact('NO', 'thermal'), { name: 'Thermisch contact NO (97-98)', cat: C, role: 'slave', kind: 'thNO', letter: 'B', old: 'F', pins: pin2('97', '98'), h: 2 }));
 
   /* ---------- operator devices (stand-alone devices) ---------- */
   const SW = 'Schakelaars';
@@ -131,7 +131,7 @@ LE.symbols = (function () {
       pins.push({ n: String(2 * i + 1), x: i, y: 0 }, { n: String(2 * i + 2), x: i, y: 2 }); pairs.push([2 * i, 2 * i + 1]);
     }
     g.push(['r', -0.35, 0.55, 2.85, 0.9]);
-    def('ol3', { name: 'Thermisch relais 3P', cat: F, role: 'master', mirror: true, letter: 'F', h: 2, poles: 3, g, pins, pairs, lab: [-0.6, 0.9] });
+    def('ol3', { name: 'Thermisch relais 3P', cat: F, role: 'master', mirror: true, letter: 'B', old: 'F', h: 2, poles: 3, g, pins, pairs, lab: [-0.6, 0.9] });
   })();
 
   /* ---------- power switching ---------- */
@@ -206,6 +206,16 @@ LE.symbols = (function () {
   const PL = 'PLC';
   def('plc', { name: 'PLC-module (voeding)', cat: PL, role: 'master', mirror: true, letter: 'K', old: 'A', h: 2, lab: [-1.2, 0.9], pins: pin2('L+', 'M'),
     g: [['l', 0, 0, 0, 0.5], ['l', 0, 1.5, 0, 2], ['r', -0.9, 0.5, 3.4, 1.0], ['t', 0.8, 1.15, 'PLC', 0.45, 'middle']] });
+  /* a compact LOGO!-style module: L+ on top, M at the bottom, the input and output terminals drawn for reference */
+  (function () {
+    const g = [['l', 0, 0, 0, 1], ['r', -0.8, 1, 13.6, 9], ['l', 0, 10, 0, 11], ['l', -0.8, 2.6, 12.8, 2.6], ['l', -0.8, 8.4, 12.8, 8.4],
+      ['r', 0.6, 3.4, 4.6, 3.6], ['t', 2.9, 5.5, 'LOGO!', 0.8, 'middle'], ['t', 8.7, 4.3, 'DC 24V', 0.45, 'middle'],
+      ['p', [[7.4, 6.4], [6.8, 6.9], [7.4, 7.4]], true], ['p', [[10.6, 6.4], [11.2, 6.9], [10.6, 7.4]], true], ['p', [[8.5, 5.4], [9, 4.9], [9.5, 5.4]], true], ['p', [[8.5, 7.5], [9, 8], [9.5, 7.5]], true],
+      ['c', 0, 1.6, 0.25], ['t', 0, 2.35, 'L+', 0.38, 'middle'], ['c', 0, 9.4, 0.25], ['t', 0, 9.05, 'M', 0.38, 'middle']];
+    for (let i = 1; i <= 8; i++) g.push(['c', 1.2 * i + 1, 1.6, 0.25], ['t', 1.2 * i + 1, 2.35, 'I' + i, 0.36, 'middle']);
+    for (let i = 1; i <= 4; i++) g.push(['c', 2.4 * i, 9.4, 0.25], ['c', 2.4 * i + 0.8, 9.4, 0.25], ['t', 2.4 * i + 0.4, 9.05, 'Q' + i, 0.36, 'middle']);
+    def('logo', { name: 'LOGO!-module', cat: 'PLC', role: 'master', mirror: true, letter: 'K', old: 'A', h: 11, lab: [-1.1, 5], pins: [{ n: 'L+', x: 0, y: 0 }, { n: 'M', x: 0, y: 11 }], g });
+  })();
   def('plc_di', { name: 'PLC-ingang', cat: PL, role: 'slave', kind: 'DI', letter: 'K', old: 'A', end: true, h: 1.5, lab: [-1.0, 0.95], pins: [{ n: 'I1', x: 0, y: 0 }],
     g: [['l', 0, 0, 0, 0.5], ['r', -0.8, 0.5, 1.6, 1.0], ['p', [[-0.15, 0.5], [0, 0.68], [0.15, 0.5]]]] });
   def('plc_do', { name: 'PLC-uitgang', cat: PL, role: 'slave', kind: 'DO', letter: 'K', old: 'A', h: 2, lab: [-1.0, 0.95], pins: [{ n: '1', x: 0, y: 0 }, { n: 'Q1', x: 0, y: 2 }],

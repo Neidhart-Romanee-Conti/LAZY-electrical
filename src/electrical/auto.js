@@ -18,7 +18,7 @@ LE.auto = (function () {
 
   const symOf = (el) => (el && el.s ? SY.get(el.s) : null);
   /* outputs end a current path: coils, lamps, valves, PLC inputs … (contacts and terminals do not) */
-  const OUT = new Set(['coil', 'coil_ton', 'coil_tof', 'valve', 'lamp', 'horn', 'heater', 'res', 'plc']);
+  const OUT = new Set(['coil', 'coil_ton', 'coil_tof', 'valve', 'lamp', 'horn', 'heater', 'res', 'plc', 'logo']);
   function isOut(el) {
     if (!el) return false;
     if (el.par) return Array.isArray(el.par) && el.par.length > 0 && el.par.every((b) => Array.isArray(b) && b.length && isOut(b[b.length - 1]));
@@ -82,7 +82,7 @@ LE.auto = (function () {
     return out;
   }
   function expandDol(p) {
-    const chain = macroChain(p);
+    const chain = macroChain(p).concat(Array.isArray(p.pre) ? p.pre : []);
     chain.push(elem(p.contactor || p.k1, { s: 'main3', tag: 'K1' }));
     const needOl = p.ol !== false && (p.ol || (chain[0] && chain[0].s !== 'mpcb3'));
     if (needOl) chain.push(Object.assign({ s: 'ol3' }, p.ol || {}));
@@ -93,9 +93,12 @@ LE.auto = (function () {
   }
 
   /* ---------- page builder ---------- */
-  function railY(T, top, bottom) {
+  /* rails: top group, an optional middle group (a distribution bus after the main breaker) and a bottom group */
+  function railY(T, top, bottom, mid) {
     const y = {};
     top.forEach((n, i) => { y[n] = T.y0 + 1 + i; });
+    const m0 = Math.max(T.y0 + 2 + top.length + 5, Math.round(T.y0 + (T.y1 - T.y0) * 0.35));
+    (mid || []).forEach((n, i) => { y[n] = m0 + i; });
     const base = Math.floor(T.y1) - 5 - (bottom.length - 1);
     bottom.forEach((n, i) => { y[n] = base + i; });
     return y;
@@ -127,7 +130,8 @@ LE.auto = (function () {
         L = Math.max(L, needs(el, d).L);
       });
       const last = symOf(path.chain[path.chain.length - 1]);
-      if (!(last && last.end) && !path.to) errs.push(where + ': het pad eindigt niet op een verbruiker (motor) en heeft geen "to"-potentialen');
+      if (!(last && last.end) && !path.to && !path.out) errs.push(where + ': het pad eindigt niet op een verbruiker (motor) en heeft geen "to"-potentialen of "out"-pijlen');
+      if (path.out && (!Array.isArray(path.out) || path.out.length !== n)) errs.push(where + ': "out" moet evenveel namen hebben als "from" (' + n + ')');
       if (pe && !path.pe) errs.push(where + ': er is een PE-aansluiting; geef "pe": "PE" (naam van de PE-potentiaal) op');
       return { cols: [{ L, R: n - 1 + (pe ? 1 : 0) + 1.2 }], multi: n };
     }
@@ -136,22 +140,25 @@ LE.auto = (function () {
     if (!tree) return null;
     const cols = []; assign(tree, 0, cols);
     const last = path.chain[path.chain.length - 1];
-    if (!path.to && !(last && (symOf(last) || {}).end) && !(last && last.par)) errs.push(where + ': geef "to" op (naam van een potentiaal onderaan, bv. "N") of eindig op een PLC-ingang');
+    if (!path.to && !path.out && !(last && (symOf(last) || {}).end) && !(last && last.par)) errs.push(where + ': geef "to" op (naam van een potentiaal onderaan, bv. "N"), "out" (een doorverwijspijl) of eindig op een PLC-ingang');
     return { cols, tree };
   }
 
   /* place everything for one page. Returns the list of pages made (more than one if the paths did not fit). */
   function buildPage(P, spec, errs, o) {
     o = o || {};
+    if (!o.trace) spec = M.clone(spec || {}); // the page keeps its own copy (retagging rewrites it); traced test builds keep identities
     const T = M.tplOf(P), where0 = 'Blad "' + (spec.title || '') + '"', e0 = errs.length;
     const paths = Array.isArray(spec.paths) ? spec.paths : [];
     const top = Array.isArray(spec.top) ? spec.top.map(String) : [], bottom = Array.isArray(spec.bottom) ? spec.bottom.map(String) : [];
+    const mid = Array.isArray(spec.mid) ? spec.mid.map(String) : [];
     paths.forEach((p) => {
-      const add = (list, n) => { if (n && list.indexOf(n) < 0 && (list === top ? bottom : top).indexOf(n) < 0) list.push(n); };
+      const add = (list, n) => { if (n && list.indexOf(n) < 0 && (list === top ? bottom : top).indexOf(n) < 0 && mid.indexOf(n) < 0) list.push(n); };
       if (!spec.top) { (Array.isArray(p.from) ? p.from : [p.from]).forEach((n) => add(top, n)); if (p.pe && !spec.bottom) add(top, p.pe); }
       if (!spec.bottom) (Array.isArray(p.to) ? p.to : p.to ? [p.to] : []).forEach((n) => add(bottom, n));
     });
-    const ry = railY(T, top, bottom);
+    const ry = railY(T, top, bottom, mid);
+    const yMidMin = mid.length ? Math.min(...mid.map((n) => ry[n])) : null, yMidMax = mid.length ? Math.max(...mid.map((n) => ry[n])) : null;
     const xMax = T.x0 + T.cols * T.colW - 0.5;
     /* measure every path, then pack them left to right over as many pages as needed */
     const measured = paths.map((p, i) => ({ p, w: pathWidth(p, errs, where0 + ', pad ' + (i + 1), T), i }));
@@ -159,10 +166,13 @@ LE.auto = (function () {
     const yBotMin = bottom.length ? Math.min(...bottom.map((n) => ry[n])) : Math.floor(T.y1) - 1;
     measured.forEach((m) => {
       const p = m.p, at = where0 + ', pad ' + (m.i + 1);
-      const chk = (n) => { if (n && ry[n] == null) errs.push(at + ': potentiaal "' + n + '" staat niet in "top" of "bottom" van dit blad'); };
+      const chk = (n) => { if (n && ry[n] == null) errs.push(at + ': potentiaal "' + n + '" staat niet in "top", "mid" of "bottom" van dit blad'); };
+      const froms = (Array.isArray(p.from) ? p.from : [p.from]).filter(Boolean), tos = (Array.isArray(p.to) ? p.to : [p.to]).filter(Boolean);
+      if (mid.length && froms.every((n) => top.indexOf(n) >= 0) && !(tos.length && tos.every((n) => mid.indexOf(n) >= 0)) && !(p.pe && froms.length === 0))
+        errs.push(at + ': dit blad heeft middelste potentialen ("mid"); een pad vanaf de bovenste potentialen moet eindigen op de middelste ("to": ' + JSON.stringify(mid) + ')');
       (Array.isArray(p.from) ? p.from : [p.from]).forEach(chk); (Array.isArray(p.to) ? p.to : [p.to]).forEach(chk); chk(p.pe);
       if (m.w && m.w.tree) {
-        const yS = yTopMax, yE = p.to ? ry[p.to] : yBotMin;
+        const yS = mid.length && mid.indexOf(p.from) >= 0 ? yMidMax : yTopMax, yE = p.to ? ry[p.to] : yBotMin;
         if (yS + m.w.tree.h + 1 > yE) errs.push(at + ': te veel elementen onder elkaar (' + m.w.tree.h + ' rasters, er is plaats voor ' + (yE - yS - 1) + '). Maak de reeks korter of verdeel ze.');
       }
     });
@@ -188,8 +198,9 @@ LE.auto = (function () {
       if (o.page && gi === 0) { pg.title = title; pg.items = []; if (spec.fn != null) pg.fn = spec.fn; if (spec.loc != null) pg.loc = spec.loc; }
       pg.spec = Object.assign({}, spec, { paths: g.map((e) => e.m.p) });
       delete pg.edited;
-      top.concat(bottom).forEach((n) => M.addPot(P, pg.id, n, { y: ry[n], side: top.indexOf(n) >= 0 ? 'top' : 'bottom' }));
-      const ctx = { P, pg, T, ry, wires: [], syms: [], cables: [], yTopMax, yBotMin, errs };
+      top.concat(mid, bottom).forEach((n) => M.addPot(P, pg.id, n, { y: ry[n], side: top.indexOf(n) >= 0 ? 'top' : mid.indexOf(n) >= 0 ? 'mid' : 'bottom' }));
+      const outY = (bottom.length ? yBotMin - 1 : Math.floor(T.y1)) - 4;
+      const ctx = { P, pg, T, ry, wires: [], syms: [], cables: [], yTopMax, yBotMin, yMidMax, mid, outY, errs };
       g.forEach((e) => placePath(ctx, e.m.p, e.m.w, e.xs));
       /* wires first, then symbols: placing a symbol on a wire splits the wire at its pins */
       ctx.wires.forEach((w) => { if (w.length >= 2 && (w[0][0] !== w[w.length - 1][0] || w[0][1] !== w[w.length - 1][1] || w.length > 2)) pg.items.push({ id: M.nid(P), k: 'wire', pts: w }); });
@@ -235,9 +246,10 @@ LE.auto = (function () {
     }
     if (Array.isArray(path.from)) return placeMulti(ctx, path, xs[0]);
     /* the wire starts at the path's own rail; symbols start below the lowest top rail of the page */
-    const yS = ctx.ry[path.from], yE = path.to ? ctx.ry[path.to] : null;
-    const r = place1(ctx, w.tree, xs, Math.max(yS, ctx.yTopMax), yE, !!path.to);
-    ctx.wires.push([[xs[0], yS], [xs[0], path.to ? yE : r.stop]]);
+    const yS = ctx.ry[path.from], yE = path.to ? ctx.ry[path.to] : path.out ? ctx.outY : null;
+    const r = place1(ctx, w.tree, xs, Math.max(yS, startY(ctx, [path.from])), yE, !!(path.to || path.out));
+    ctx.wires.push([[xs[0], yS], [xs[0], yE != null ? yE : r.stop]]);
+    if (path.out) ctx.syms.push({ el: { s: 'ref', name: String(path.out) }, x: xs[0], y: ctx.outY });
   }
   /* place a sequence; returns {cur: y after the sequence, stop: where its column wire must end} */
   function place1(ctx, node, xs, yStart, yEnd, align) {
@@ -247,7 +259,8 @@ LE.auto = (function () {
       const last = i === node.items.length - 1;
       if (it.kind === 'sym') {
         let top = cur + 1;
-        if (last && align && yEnd != null && !it.d.end) top = Math.max(cur + 1, yEnd - 1 - it.h);
+        /* bottom-align above the highest bottom rail, so a pin never lands on another rail (e.g. 0V above 1N) */
+        if (last && align && yEnd != null && !it.d.end) top = Math.max(cur + 1, Math.min(yEnd, ctx.yBotMin) - 1 - it.h);
         ctx.syms.push({ el: it.el, x, y: top });
         cur = top + it.h; stop = it.d.end ? top : cur;
         return;
@@ -272,11 +285,13 @@ LE.auto = (function () {
     return { cur, stop, endSym: node.items.length && node.items[node.items.length - 1].kind === 'sym' && node.items[node.items.length - 1].d.end };
   }
 
+  /* where symbols of a path may start: under the rail group its "from" rails belong to */
+  function startY(ctx, from) { return ctx.mid.length && from.some((n) => ctx.mid.indexOf(n) >= 0) ? ctx.yMidMax : ctx.yTopMax; }
   /* multi-pole power paths: poles 1 grid apart, PE in the column right of the last pole */
-  function placeMulti(ctx, path, x, startY) {
+  function placeMulti(ctx, path, x, y0) {
     const n = path.from.length, ry = ctx.ry;
-    let cur = startY != null ? startY : ctx.yTopMax;
-    const loadLimit = (path.to ? Math.min(...path.to.map((r) => ry[r])) : ctx.yBotMin) - 1;
+    let cur = y0 != null ? y0 : startY(ctx, path.from);
+    const loadLimit = Math.min(path.to ? Math.min(...path.to.map((r) => ry[r])) : path.out ? ctx.outY + 1 : ctx.yBotMin, ctx.yBotMin) - 1;
     let stopY = null, peStop = null, hasPE = !!path.pe;
     path.chain.forEach((el) => {
       if (el.cable != null) {
@@ -302,21 +317,29 @@ LE.auto = (function () {
       d.pins.forEach((p) => { if (p.n === 'PE') peStop = Math.max(peStop == null ? -Infinity : peStop, cur + 1 + p.y); });
       cur += 1 + d.h;
     });
+    if (path.to && cur > Math.min(...path.to.map((r) => ry[r])) - 1) ctx.errs.push('Pad naar ' + path.to.join('/') + ': te veel elementen; ze passen niet boven de potentialen waarop het pad eindigt');
     for (let i = 0; i < n; i++) {
-      const end = path.to ? ry[path.to[i]] : stopY != null ? stopY : cur;
+      const end = path.to ? ry[path.to[i]] : path.out ? ctx.outY : stopY != null ? stopY : cur;
       ctx.wires.push([[x + i, ry[path.from[i]]], [x + i, end]]);
+      if (path.out) ctx.syms.push({ el: { s: 'ref', name: String(path.out[i]) }, x: x + i, y: ctx.outY });
     }
     if (hasPE && peStop != null && ry[path.pe] != null) ctx.wires.push([[x + n, ry[path.pe]], [x + n, peStop]]);
     return cur;
   }
   function elem(o, def) { return Object.assign({}, def, typeof o === 'string' ? { tag: o } : o || {}); }
+  /* extra 3-pole devices between the breaker and the starter (e.g. a line contactor switched by the emergency stop) */
+  function placePre(ctx, p, x, cur) {
+    (Array.isArray(p.pre) ? p.pre : []).forEach((e) => { const d = symOf(e); if (!d) { ctx.errs.push('onbekend symbool "' + e.s + '" in "pre"'); return; } ctx.syms.push({ el: e, x, y: cur + 1 }); cur += 1 + d.h; });
+    return cur;
+  }
   /* reversing starter: K1 forward, K2 reverse (L1 and L3 swapped), drawn to the right with its label on the right */
   function placeRev(ctx, p, x) {
     const ry = ctx.ry;
-    let cur = ctx.yTopMax;
+    let cur = startY(ctx, p.from);
     const chain = macroChain(p);
     const k1 = elem(p.fwd || p.k1 || p.contactor, { s: 'main3', tag: 'K1' }), k2 = elem(p.rev || p.k2, { s: 'main3', tag: 'K2', lr: true });
     if (chain[0]) { ctx.syms.push({ el: chain[0], x, y: cur + 1 }); cur += 3; }
+    cur = placePre(ctx, p, x, cur);
     const yK = cur + 5;
     for (let i = 0; i < 3; i++) ctx.wires.push([[x + i, cur + 1 + i], [x + 5 + i, cur + 1 + i], [x + 5 + i, yK]]);
     ctx.syms.push({ el: k1, x, y: yK }); ctx.syms.push({ el: k2, x: x + 5, y: yK, lr: true });
@@ -333,10 +356,11 @@ LE.auto = (function () {
   /* star-delta starter: K1 main, K3 delta (to W2 U2 V2), K2 star (shorts W2 U2 V2) */
   function placeYd(ctx, p, x) {
     const ry = ctx.ry;
-    let cur = ctx.yTopMax;
+    let cur = startY(ctx, p.from);
     const chain = macroChain(p);
     const k1 = elem(p.main || p.k1 || p.contactor, { s: 'main3', tag: 'K1' }), k2 = elem(p.star || p.k2, { s: 'main3', tag: 'K2', lr: true }), k3 = elem(p.delta || p.k3, { s: 'main3', tag: 'K3', lr: true });
     if (chain[0]) { ctx.syms.push({ el: chain[0], x, y: cur + 1 }); cur += 3; }
+    cur = placePre(ctx, p, x, cur);
     ctx.syms.push({ el: k1, x, y: cur + 1 }); cur += 3;
     const yK3 = cur + 5;
     for (let i = 0; i < 3; i++) ctx.wires.push([[x + i, cur + 1 + i], [x + 4 + i, cur + 1 + i], [x + 4 + i, yK3]]);
@@ -381,7 +405,22 @@ LE.auto = (function () {
     });
     if (!Array.isArray(spec.pages) || !spec.pages.length) errs.push('het project heeft geen bladen ("pages")');
     applyDevices(P, spec.devices);
+    retag(P);
     return { P, errors: errs };
+  }
+  /* with page-based tags (2K3) the real tag depends on where a device ends up: renumber after layout and
+     rewrite the stored page descriptions, so the drawing, the descriptions and the AI all use the same tags */
+  const TAG_KEYS = ['tag', 'cable', 'contactor', 'k1', 'k2', 'k3', 'fwd', 'rev', 'main', 'star', 'delta'];
+  function retag(P) {
+    if ((P.settings || {}).tagMode === 'consecutive') return {};
+    const map = M.renumberDevices(P);
+    const walk = (o) => {
+      if (Array.isArray(o)) { o.forEach(walk); return; }
+      if (!o || typeof o !== 'object') return;
+      Object.keys(o).forEach((k) => { if (TAG_KEYS.indexOf(k) >= 0 && typeof o[k] === 'string' && map[o[k]] != null) o[k] = map[o[k]]; else walk(o[k]); });
+    };
+    P.pages.forEach((pg) => { if (pg.spec) walk(pg.spec); });
+    return map;
   }
   /* device data given once per tag is copied into the page description before layout, so labels get room */
   function withDevices(ps, devs) {
@@ -427,6 +466,6 @@ LE.auto = (function () {
     return s.join('; ');
   }
 
-  return { buildPage, buildProject, applyDevices, projectSpec, isOut, expandDol, LOAD_POLES };
+  return { buildPage, buildProject, applyDevices, projectSpec, retag, isOut, expandDol, LOAD_POLES };
 })();
 if (typeof module !== 'undefined') module.exports = LE;

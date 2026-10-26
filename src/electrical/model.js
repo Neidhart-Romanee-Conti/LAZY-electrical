@@ -21,7 +21,8 @@ LE.model = (function () {
     return {
       format: 'lazy-electrical', version: 2, seq: 0,
       info: Object.assign({ name: 'Nieuw project', desc1: '', desc2: '', customer: '', drawingNo: '', author: '', company: '', created: today(), revision: 'A', revDate: '', revText: '' }, o.info || {}),
-      settings: Object.assign({ template: 'A3', tagMode: 'consecutive', letters: '81346', wireNo: 'seq', showPinNo: true }, o.settings || {}),
+      /* defaults follow the owner's school layout: A4, tags from sheet + letter + column (2K3) */
+      settings: Object.assign({ template: 'A4', tagMode: 'pagecol', letters: '81346', wireNo: 'seq', showPinNo: true }, o.settings || {}),
       pages: [], parts: [], extras: [], revisions: []
     };
   }
@@ -413,7 +414,8 @@ LE.model = (function () {
         const pins = symPins(it), info = { it, pg, d, pins: [], dev: null, ref: refStr(pg, it.x), col: colOf(P, it.x), row: rowOf(P, it.y) };
         pins.forEach((p) => { const k = K(p.x, p.y); uf.f(k); info.pins.push(Object.assign({ key: k }, p)); pts.push({ p: [p.x, p.y], end: true, pin: true }); arm(p.x, p.y, 1); });
         (d.through || []).forEach((t) => uf.u(info.pins[t[0]].key, info.pins[t[1]].key));
-        if (d.role === 'ref' && (it.p || {}).name) uf.u(info.pins[0].key, 'ref:' + it.p.name);
+        /* a continuation arrow is the potential with the same name (so "2L1" on sheet 1 feeds the rail 2L1 on sheet 6) */
+        if (d.role === 'ref' && (it.p || {}).name) uf.u(info.pins[0].key, 'pot:' + it.p.name);
         A.syms.push(info); A.symById[it.id] = info;
       });
       /* T-junctions: a wire end or pin inside another wire's segment */
@@ -493,18 +495,21 @@ LE.model = (function () {
       dv.slaves.forEach((s) => { s.xref = dv.master ? dv.master.ref : ''; });
     });
 
-    /* potential cross references: previous and next page that carry the same potential */
-    const potPages = {};
-    P.pages.forEach((pg) => pg.items.forEach((it) => { if (it.k === 'pot') (potPages[it.name] = potPages[it.name] || []).push(pg); }));
+    /* where each potential name appears: rails (page.0 on the next sheet, page.9 on the previous one) and continuation arrows (their own page.column) */
+    const occ = {};
+    P.pages.forEach((pg) => pg.items.forEach((it) => { if (it.k === 'pot') (occ[it.name] = occ[it.name] || []).push({ pg, rail: true }); }));
+    A.syms.forEach((s) => { const nm = s.d.role === 'ref' && (s.it.p || {}).name; if (nm) (occ[nm] = occ[nm] || []).push({ pg: s.pg, sym: s }); });
+    const refOf = (o, side) => (o.sym ? o.sym.ref : pageLabel(o.pg) + '.' + (side === 'prev' ? T.cols - 1 : 0));
     P.pages.forEach((pg) => pg.items.forEach((it) => {
       if (it.k !== 'pot') return;
-      const list = potPages[it.name].filter((p, i, a) => a.indexOf(p) === i), i = list.indexOf(pg);
-      A.potRefs[it.id] = { prev: i > 0 ? pageLabel(list[i - 1]) + '.' + (T.cols - 1) : '', next: i < list.length - 1 ? pageLabel(list[i + 1]) + '.0' : '' };
+      const list = occ[it.name], i = A.pageIdx[pg.id];
+      const before = list.filter((o) => A.pageIdx[o.pg.id] < i), after = list.filter((o) => A.pageIdx[o.pg.id] > i);
+      A.potRefs[it.id] = { prev: before.length ? refOf(before[before.length - 1], 'prev') : '', next: after.length ? refOf(after[0], 'next') : '' };
     }));
-    /* continuation arrows: show where the partner arrows with the same name are */
+    /* continuation arrows: show where the same name continues (other arrows, or the potential rail on another sheet) */
     A.syms.filter((s) => s.d.role === 'ref').forEach((s) => {
       const nm = (s.it.p || {}).name;
-      A.refInfo[s.it.id] = nm ? A.syms.filter((o) => o !== s && o.d.role === 'ref' && (o.it.p || {}).name === nm).map((o) => o.ref) : [];
+      A.refInfo[s.it.id] = nm ? occ[nm].filter((o) => o.pg !== s.pg && o.sym !== s).map((o) => refOf(o, 'next')).filter((r, i, a) => a.indexOf(r) === i) : [];
     });
 
     /* wire numbers per net (named potentials keep their name) */
@@ -566,12 +571,13 @@ LE.model = (function () {
     P.pages.forEach((pg) => pg.items.forEach((it) => { if (it.k === 'cable' && !it.lock) { saved.push([it, it.tag]); it.tag = '?'; } }));
     list.forEach((d) => {
       if (keep.has(d.tag)) return;
-      const m = d.master || d.all[0], letter = (d.tag.match(/^\d*[a-z]?([A-Z]+)/) || [])[1] || m.d.letter || 'K';
-      const nt = nextTag(P, m.d.role === 'master' || m.d.role === 'device' ? letterOf(P, m.it.s) || letter : letter, m.pg, m.it.x, true);
+      /* keep the device's own letter (a contactor tagged Q stays Q even though its coil symbol defaults to K) */
+      const m = d.master || d.all[0], letter = (d.tag.match(/^\d*[a-z]?\.?([A-Z]+)/) || [])[1] || letterOf(P, m.it.s) || 'K';
+      const nt = nextTag(P, letter, m.pg, m.it.x, true);
       d.all.forEach((s) => { s.it.tag = nt; });
       map[d.tag] = nt;
     });
-    P.pages.forEach((pg) => pg.items.forEach((it) => { if (it.k === 'cable' && it.tag === '?') it.tag = nextTag(P, 'W', pg, it.a[0], true); }));
+    P.pages.forEach((pg) => pg.items.forEach((it) => { if (it.k === 'cable' && it.tag === '?') { it.tag = nextTag(P, 'W', pg, it.a[0], true); const old = saved.find((x) => x[0] === it); if (old) map[old[1]] = it.tag; } }));
     return map;
   }
   function renumberTerminals(P, strip) {

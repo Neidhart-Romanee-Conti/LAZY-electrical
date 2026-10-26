@@ -100,9 +100,43 @@ LE.checks = (function () {
       if (!c.cores.length) add('warn', 'Kabel -' + c.it.tag + ' (blad ' + M.pageLabel(c.pg) + ') kruist geen draden.', ref);
       else if (total && c.cores.length > total) add('error', 'Kabel -' + c.it.tag + ' heeft ' + total + ' aders, maar er lopen ' + c.cores.length + ' draden door.', ref);
     });
+    /* design rules that a drawing check can catch */
+    const mains = /^(\d*L\d?|\d*N|L\d\.\d|N\.\d)$/;
+    A.syms.forEach((s) => {
+      /* a 24 V transistor output cannot switch a 230 V coil: use an interface relay */
+      if (s.d.kind !== 'DO' || !s.dev || !s.dev.master) return;
+      const pt = LE.parts && LE.parts.find(s.dev.p.part);
+      const transistor = (pt && pt.transistor) || /24\s?CE|0BA5|transistor/i.test([s.dev.p.part, s.dev.p.desc, s.dev.p.desc2].join(' '));
+      if (!transistor) return;
+      if (reachesMains(A, s, mains))
+        add('error', 'PLC-uitgang ' + ((s.it.p || {}).addr || '') + ' van ' + s.dev.full + ' is een 24 V-transistoruitgang maar schakelt 230 V. Laat de uitgang een 24 V-interfacerelais sturen (tussen de uitgang en 0V) en schakel de 230 V-spoel met een contact van dat relais.', s);
+    });
+    Object.values(A.devices).forEach((d) => {
+      /* an emergency stop must act in hardware, not only through a PLC input */
+      const es = d.all.filter((s) => s.d.id === 'estop'); if (!es.length) return;
+      const toPlc = (s) => s.pins.some((p) => A.nets[p.net].pins.some((q) => q.sym.d.kind === 'DI') || A.nets[p.net].pins.some((q) => q.sym.d.role === 'terminal' && q.sym.pins.some((tp) => tp !== q.pin && A.nets[tp.net].pins.some((r) => r.sym.d.kind === 'DI'))));
+      if (es.every(toPlc)) add('error', 'Noodstop ' + d.full + ' werkt alleen via een PLC-ingang. Een noodstop moet ook rechtstreeks (bedraad) afschakelen: noodstop → relais "NOOD" → lijncontactor in de hoofdstroom. Een tweede contact van de noodstop mag naar de PLC.', es[0]);
+    });
     if (LE.cabinet) LE.cabinet.check(P, A, add);
     const order = { error: 0, warn: 1, info: 2 };
     return out.sort((a, b) => order[a.level] - order[b.level]);
+  }
+  /* follow the current path from a PLC output in both directions, through contacts, terminals and the load,
+     and tell whether it reaches a 230 V potential (L1, 1L1, N, 1N …) */
+  function reachesMains(A, start, mains) {
+    const seen = new Set(), todo = start.pins.map((p) => p.net);
+    for (let step = 0; step < 12 && todo.length; step++) {
+      const n = todo.shift(); if (seen.has(n)) continue; seen.add(n);
+      const net = A.nets[n];
+      if ([...net.pots].some((x) => mains.test(x))) return true;
+      if (net.pots.size) continue; // a named potential (+24V, 0V …) ends the path
+      net.pins.forEach((q) => {
+        if (q.sym === start || /^(psu|trafo1|vfd)$/.test(q.sym.d.id)) return; // converters separate circuits
+        const pair = (q.sym.d.pairs || []).find((pr) => pr.indexOf(q.pin.i) >= 0);
+        if (pair) todo.push(q.sym.pins[pair[0] === q.pin.i ? pair[1] : pair[0]].net);
+      });
+    }
+    return false;
   }
   function count(list) { return { error: list.filter((x) => x.level === 'error').length, warn: list.filter((x) => x.level === 'warn').length }; }
   return { run, count };

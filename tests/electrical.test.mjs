@@ -6,6 +6,10 @@ import { loadElectrical } from './load.mjs';
 const LE = loadElectrical();
 const M = LE.model;
 const plain = (x) => JSON.parse(JSON.stringify(x));
+/* editing tests use fixed settings so tag names and coordinates stay predictable */
+const NP = () => M.newProject({ settings: { template: 'A3', tagMode: 'consecutive' } });
+const consec = (spec) => Object.assign({}, spec, { settings: { template: 'A3', tagMode: 'consecutive' } });
+const EX = (id) => consec(LE.examples.find((e) => e.id === id).spec);
 
 /* ---------- helpers ---------- */
 function gridIssues(P) {
@@ -58,6 +62,7 @@ function expected(path, trace) {
       u(cur, it.id + ':0'); f(it.id + ':0');
       cur = d.pins.length > 1 ? it.id + ':1' : null;
       if (d.pins.length > 1) f(cur);
+      if ((d.through || []).length) u(it.id + ':0', cur); // a terminal passes the wire straight through
       if (last && split && toKey) u(cur, toKey);
     });
     return cur;
@@ -73,7 +78,7 @@ function actualNet(A, key) {
 
 /* ---------- model ---------- */
 test('model: a contact dropped on a wire splits it, numbers itself and cross-references its coil', () => {
-  const P = M.newProject(), pg = M.addPage(P, { title: 't' });
+  const P = NP(), pg = M.addPage(P, { title: 't' });
   M.addPot(P, pg.id, 'L1'); M.addPot(P, pg.id, 'N', { side: 'bottom' });
   M.addWire(P, pg.id, [[10, 3], [10, 46]]);
   const s1 = M.place(P, pg.id, 'pb_no', 10, 10), k1 = M.place(P, pg.id, 'coil', 10, 40), c = M.place(P, pg.id, 'no', 10, 20, { tag: 'K1' });
@@ -86,7 +91,7 @@ test('model: a contact dropped on a wire splits it, numbers itself and cross-ref
   assert.deepEqual(plain(LE.checks.run(P, A).filter((x) => x.level === 'error')), []);
 });
 test('model: deleting an inline contact joins the wire again, moving a coil drags its wires along', () => {
-  const P = M.newProject(), pg = M.addPage(P, {});
+  const P = NP(), pg = M.addPage(P, {});
   M.addPot(P, pg.id, 'L1'); M.addPot(P, pg.id, 'N', { side: 'bottom' });
   M.addWire(P, pg.id, [[10, 3], [10, 46]]);
   const k = M.place(P, pg.id, 'coil', 10, 40), c = M.place(P, pg.id, 'no', 10, 20, { tag: 'K1' });
@@ -99,7 +104,7 @@ test('model: deleting an inline contact joins the wire again, moving a coil drag
   assert.equal(A.nets[A.symById[k.id].pins[1].net].name, 'N');
 });
 test('model: copy/paste gives new tags and keeps contacts with their new coil; undo restores', () => {
-  const P = M.newProject(), H = new M.History(P), pg = M.addPage(P, {});
+  const P = NP(), H = new M.History(P), pg = M.addPage(P, {});
   const k = M.place(P, pg.id, 'coil', 10, 30), c = M.place(P, pg.id, 'no', 10, 20, { tag: 'K1' });
   const clip = M.copyItems(P, pg.id, [k.id, c.id]);
   H.run('paste', (Q) => M.pasteItems(Q, pg.id, clip, 6, 0));
@@ -109,7 +114,7 @@ test('model: copy/paste gives new tags and keeps contacts with their new coil; u
   assert.equal(H.P.pages[0].items.length, 2);
 });
 test('model: renumbering devices follows page order and keeps locked tags', () => {
-  const P = M.newProject(), pg = M.addPage(P, {});
+  const P = NP(), pg = M.addPage(P, {});
   M.place(P, pg.id, 'coil', 30, 30, { tag: 'K7' }); M.place(P, pg.id, 'coil', 10, 30, { tag: 'K3' });
   const locked = M.place(P, pg.id, 'coil', 50, 30, { tag: 'K9' }); locked.lock = true;
   M.renumberDevices(P);
@@ -139,7 +144,7 @@ for (const ex of LE.examples) {
   });
   test('layout nets: ' + ex.name, () => {
     /* rebuild page by page with a trace, then compare the promised connections with the drawn ones */
-    const P = M.newProject(), errs = [];
+    const P = NP(), errs = [];
     for (const ps of ex.spec.pages) {
       const trace = [];
       LE.auto.buildPage(P, ps, errs, { trace });
@@ -157,7 +162,7 @@ for (const ex of LE.examples) {
   });
 }
 test('layout: star-delta power circuit connects windings correctly', () => {
-  const P = LE.auto.buildProject(LE.examples.find((e) => e.id === 'yd').spec).P, A = M.analyze(P);
+  const P = LE.auto.buildProject(EX('yd')).P, A = M.analyze(P);
   const motor = A.syms.find((s) => s.it.s === 'motor6'), net = (n) => motor.pins.find((p) => p.n === n).net;
   const dev = (tag, s) => A.syms.find((x) => x.it.tag === tag && x.it.s === s);
   const k1 = dev('K1', 'main3'), k2 = dev('K2', 'main3'), k3 = dev('K3', 'main3');
@@ -169,7 +174,7 @@ test('layout: star-delta power circuit connects windings correctly', () => {
   assert.notEqual(net('U1'), net('W2'));
 });
 test('layout: reversing circuit swaps L1 and L3', () => {
-  const P = LE.auto.buildProject(LE.examples.find((e) => e.id === 'rev').spec).P, A = M.analyze(P);
+  const P = LE.auto.buildProject(EX('rev')).P, A = M.analyze(P);
   const dev = (tag) => A.syms.find((x) => x.it.tag === tag && x.it.s === 'main3');
   const k1 = dev('K1'), k2 = dev('K2');
   assert.equal(k1.pins[0].net, k2.pins[0].net); // both fed from L1 side
@@ -178,7 +183,7 @@ test('layout: reversing circuit swaps L1 and L3', () => {
   assert.equal(k2.pins[3].net, k1.pins[3].net);
 });
 test('layout: errors are reported in plain Dutch for the AI', () => {
-  const P = M.newProject(), errs = [];
+  const P = NP(), errs = [];
   LE.auto.buildPage(P, { title: 'x', top: ['L1'], bottom: ['N'], paths: [{ from: 'L1', to: 'N', chain: [{ s: 'coil', tag: 'K1' }, { s: 'no' }, { s: 'bestaatniet' }] }] }, errs);
   assert.ok(errs.some((e) => /laatste element/.test(e)));
   assert.ok(errs.some((e) => /tag/.test(e)));
@@ -186,7 +191,7 @@ test('layout: errors are reported in plain Dutch for the AI', () => {
   assert.equal(P.pages.length, 0);
 });
 test('layout: too many paths spill onto a continuation page', () => {
-  const P = M.newProject(), errs = [], paths = [];
+  const P = NP(), errs = [], paths = [];
   for (let i = 1; i <= 24; i++) paths.push({ from: 'L1', to: 'N', chain: [{ s: 'pb_no', tag: 'S' + i, desc: 'KNOP ' + i }, { s: 'lamp', tag: 'P' + i, desc: 'LAMP ' + i }] });
   const pages = LE.auto.buildPage(P, { title: 'Lampen', top: ['L1'], bottom: ['N'], paths }, errs);
   assert.deepEqual(plain(errs), []);
@@ -197,7 +202,7 @@ test('layout: too many paths spill onto a continuation page', () => {
 
 /* ---------- checks ---------- */
 test('checks: short circuit, missing coil and duplicate tag are errors', () => {
-  const P = M.newProject(), pg = M.addPage(P, {});
+  const P = NP(), pg = M.addPage(P, {});
   M.addPot(P, pg.id, 'L1'); M.addPot(P, pg.id, 'N', { side: 'bottom' });
   M.addWire(P, pg.id, [[10, 3], [10, 46]]);
   M.place(P, pg.id, 'no', 20, 20, { tag: 'K5' });
@@ -210,7 +215,7 @@ test('checks: short circuit, missing coil and duplicate tag are errors', () => {
 
 /* ---------- lists ---------- */
 test('lists: BOM, terminals, cables and PLC I/O follow the drawing', () => {
-  const P = LE.auto.buildProject(LE.examples.find((e) => e.id === 'logo').spec).P, A = M.analyze(P), L = LE.lists;
+  const P = LE.auto.buildProject(EX('logo')).P, A = M.analyze(P), L = LE.lists;
   const bom = L.bom(P, A);
   assert.ok(bom.some((r) => r.part === '6ED1 052-1MD08-0BA1' && r.qty === 1));
   const io = L.plcio(P, A);
@@ -219,7 +224,7 @@ test('lists: BOM, terminals, cables and PLC I/O follow the drawing', () => {
   const X = L.terminals(P, A).find((s) => s.strip === '-X1');
   assert.deepEqual(plain(X.rows.map((r) => r.no)), ['1', '2', '3', 'PE']);
   assert.match(X.rows[0].outer, /-M1:U1/);
-  const P2 = LE.auto.buildProject(LE.examples[0].spec).P, cab = L.cables(P2)[0];
+  const P2 = LE.auto.buildProject(EX('dol')).P, cab = L.cables(P2)[0];
   assert.equal(cab.tag, '-W1'); assert.equal(cab.used, 4); assert.equal(cab.total, 4);
   assert.match(L.csv(P2, 'bom'), /^﻿Aantal;Artikelnummer/);
   assert.ok(L.listPages(P2).length >= 5);
@@ -228,7 +233,7 @@ test('lists: BOM, terminals, cables and PLC I/O follow the drawing', () => {
 
 /* ---------- cabinet layout ---------- */
 test('cabinet: pick list, snapping onto a DIN rail, heat and rail length in the BOM', () => {
-  const P = LE.auto.buildProject(LE.examples[0].spec).P, cab = M.addPage(P, { title: 'Kast', kind: 'cabinet' });
+  const P = LE.auto.buildProject(EX('dol')).P, cab = M.addPage(P, { title: 'Kast', kind: 'cabinet' });
   cab.scale = 5;
   M.addItem(P, cab.id, { k: 'encl', x: 6, y: 5, w: 24, h: 32 });
   M.addItem(P, cab.id, { k: 'rail', x: 7, y: 10, w: 22 });
@@ -256,7 +261,7 @@ test('ai: a full project answer is applied and checked', () => {
   assert.ok(r.P.pages.length >= 3);
 });
 test('ai: ops change an existing project without touching other pages', () => {
-  const P = LE.auto.buildProject(LE.examples[0].spec).P;
+  const P = LE.auto.buildProject(EX('dol')).P;
   const r = LE.ai.apply(P, { ops: [{ op: 'setDevice', tag: 'M1', desc: 'POMP 2' }, { op: 'addPage', spec: { title: 'Extra', top: ['1L1'], bottom: ['1N'], paths: [{ from: '1L1', to: '1N', chain: [{ s: 'no', tag: 'K1' }, { s: 'horn', tag: 'P9', desc: 'ALARM' }] }] } }] });
   assert.deepEqual(plain(LE.ai.mustFix(r)), []);
   assert.equal(r.P.pages.length, P.pages.length + 1);
