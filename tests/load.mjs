@@ -14,8 +14,3 @@ export function loadElectrical({ symbols = false } = {}) {
   vm.runInContext(read('src/electrical/engine.js') + '\n;globalThis.__SF = SF;', ctx);
   return ctx.__SF;
 }
-export function loadLogo() {
-  const ctx = vm.createContext({ Math, JSON, Object, Array, String, Number, isFinite });
-  vm.runInContext(read('src/logo/engine.js') + '\n;globalThis.__LL = LL;', ctx);
-  return ctx.__LL;
-}

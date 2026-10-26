@@ -1,4 +1,4 @@
-// Builds the two apps into single, self-contained HTML files in dist/.
+// Builds LAZY Electrical into one self-contained HTML file: dist/index.html.
 // Usage: node scripts/build.mjs
 // If symbols/local/ holds a private symbol library (seelib.js / seeall.js), it is bundled in;
 // otherwise the apps use their built-in symbols. symbols/local/ is never committed.
@@ -18,7 +18,4 @@ const electrical = read('src/electrical/ui.html')
   .replace('/*__EDITOR__*/', () => read('src/electrical/editor.js'));
 writeFileSync(join(root, 'dist/index.html'), electrical);
 
-const logo = read('src/logo/ui.html').replace('/*__ENGINE__*/', () => read('src/logo/engine.js'));
-writeFileSync(join(root, 'dist/logo.html'), logo);
-
-console.log('built dist/index.html (LAZY Electrical' + (symbols ? ', with local symbol library' : ', built-in symbols') + ') and dist/logo.html (LAZY Logo)');
+console.log('built dist/index.html (LAZY Electrical' + (symbols ? ', with local symbol library' : ', built-in symbols') + ')');
