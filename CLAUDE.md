@@ -37,6 +37,45 @@
 - **`app.js` + `ui.html`**: the workspace UI. It has the ribbon, the tree, tabbed sheets with the drawing tools, properties, the symbol browser, database tables, checks, the File backstage, PDF/CSV export and the AI panel.
 - **AI connection:** on claude.ai it uses the artifact `sample` capability (`window.claude.use('sample')`). Elsewhere it can use the user's own API key (a direct browser call with streaming), or fall back to copy-paste.
 
+## Decisions and preferences (from earlier work with the owner)
+
+**Look and feel**
+- Plain black and white with IBM Plex Sans/Mono, square borders, no colors.
+- Header logo: an inverted **LAZY** block followed by the app name.
+- Keep the UI lean. The owner explicitly asked to remove:
+  - explanation texts and hint paragraphs;
+  - example placeholder texts in input fields;
+  - "save as example" features;
+  - notes about the Claude account.
+- Don't add such texts back. Short labels are enough.
+- Every form section can be collapsed (remembered per browser). In drawing mode (Tekenen) the whole form panel is hidden by default, with a "Formulier tonen" button.
+
+**Drawing conventions (the owner's school layout)**
+- A4 landscape, frame with columns 0–9 and rows A–F, title block at the bottom.
+- Sheet order:
+  1. supply (voedingsblad: L1–L3/N/PE, main breaker, PSU, breakers);
+  2. control circuit (stuurschakeling);
+  3. LOGO! inputs (ingangen) and outputs (uitgangen), with a WAGO 24 V relay per output;
+  4. power circuit (vermogenblad).
+- Device tags = sheet number + letter + column (e.g. `2K3`). Duplicates get `.1`, `.2`.
+- Cross-reference tables H/M/V under coils.
+- Terminals marked `X` + number, only for parts outside the panel. Thermal relays sit in the panel, so they get no X terminals.
+
+**Behaviour the owner asked for**
+- The AI must never show "invalid answer" errors to the user. Repair the answer, retry quietly, and only report real failures in plain Dutch.
+- Protection devices (emergency stop, stop buttons, thermal contacts) appear once at the start of a rung, then the rung branches. Never repeat them per coil.
+- "Start from two places" means two NO start buttons in parallel and two NC stop buttons in series.
+- The rules card ("Regels voor de AI") holds general rules that apply to every project. It is saved per account on claude.ai (artifact `db`) and in localStorage elsewhere.
+
+**Hardware**
+- **At home:** the owner has a LOGO! 24 0BA5 (6ED1 052-1CC00-0BA5, 24 V DC, transistor outputs, no Ethernet).
+- **At school:** an Ethernet LOGO!.
+- Programs reach the module through LOGO! Soft Comfort.
+
+**Known limitations right now**
+- The 2026-10-26 rewrite (ribbon workspace, component model) was built before this section was read, so it does not yet follow all the look-and-feel and drawing conventions above (colours, hint texts, A3 default, consecutive tags, M/NO/NC contact tables). Check with the owner before changing it either way.
+- The AI loop has not yet been tested against the real Claude API.
+
 ## Commands
 - `npm test` runs all tests.
 - `npm run build` writes `dist/index.html` (one self-contained file).
