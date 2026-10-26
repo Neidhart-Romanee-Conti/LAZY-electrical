@@ -94,13 +94,13 @@ LE.auto = (function () {
 
   /* ---------- page builder ---------- */
   /* rails: top group, an optional middle group (a distribution bus after the main breaker) and a bottom group */
-  function railY(T, top, bottom, mid) {
+  function railY(T, top, bottom, mid, base) {
     const y = {};
     top.forEach((n, i) => { y[n] = T.y0 + 1 + i; });
     const m0 = Math.max(T.y0 + 2 + top.length + 5, Math.round(T.y0 + (T.y1 - T.y0) * 0.35));
     (mid || []).forEach((n, i) => { y[n] = m0 + i; });
-    const base = Math.floor(T.y1) - 5 - (bottom.length - 1);
-    bottom.forEach((n, i) => { y[n] = base + i; });
+    const b0 = base != null ? base : Math.floor(T.y1) - 5 - (bottom.length - 1);
+    bottom.forEach((n, i) => { y[n] = b0 + i; });
     return y;
   }
   function pathWidth(path, errs, where, T) {
@@ -157,11 +157,16 @@ LE.auto = (function () {
       if (!spec.top) { (Array.isArray(p.from) ? p.from : [p.from]).forEach((n) => add(top, n)); if (p.pe && !spec.bottom) add(top, p.pe); }
       if (!spec.bottom) (Array.isArray(p.to) ? p.to : p.to ? [p.to] : []).forEach((n) => add(bottom, n));
     });
-    const ry = railY(T, top, bottom, mid);
-    const yMidMin = mid.length ? Math.min(...mid.map((n) => ry[n])) : null, yMidMax = mid.length ? Math.max(...mid.map((n) => ry[n])) : null;
-    const xMax = T.x0 + T.cols * T.colW - 0.5;
     /* measure every path, then pack them left to right over as many pages as needed */
     const measured = paths.map((p, i) => ({ p, w: pathWidth(p, errs, where0 + ', pad ' + (i + 1), T), i }));
+    let base = null;
+    if (spec.compact && bottom.length && !mid.length && measured.every((m) => m.w && m.w.tree)) {
+      const tall = Math.max(0, ...measured.map((m) => m.w.tree.h)), yT = T.y0 + top.length;
+      base = Math.min(Math.floor(T.y1) - 5 - (bottom.length - 1), Math.max(yT + tall + 2, Math.round(T.y0 + (T.y1 - T.y0) * 0.5)));
+    }
+    const ry = railY(T, top, bottom, mid, base);
+    const yMidMin = mid.length ? Math.min(...mid.map((n) => ry[n])) : null, yMidMax = mid.length ? Math.max(...mid.map((n) => ry[n])) : null;
+    const xMax = T.x0 + T.cols * T.colW - 0.5;
     const yTopMax = top.length ? Math.max(...top.map((n) => ry[n])) : T.y0;
     const yBotMin = bottom.length ? Math.min(...bottom.map((n) => ry[n])) : Math.floor(T.y1) - 1;
     measured.forEach((m) => {
@@ -182,9 +187,15 @@ LE.auto = (function () {
       if (!m.w) return;
       const cols = m.w.cols;
       const place = (start) => { const xs = []; let xx = start; cols.forEach((c, i) => { if (i) xx += Math.max(3, Math.ceil(cols[i - 1].R + c.L + 0.2)); xs.push(xx); }); return xs; };
-      let start = x == null ? Math.ceil(T.x0 + cols[0].L + 0.3) : x + Math.max(3, Math.ceil(cur[cur.length - 1].lastR + cols[0].L + 0.6));
+      const inCol = (min) => {
+        if (!spec.columns) return min;
+        const off = Math.max(Math.ceil(cols[0].L + 0.3), Math.round(T.colW * 0.6));
+        for (let c = spec.startCol || 0; c < T.cols * 2; c++) { const v = T.x0 + c * T.colW + off; if (v >= min) return v; }
+        return min;
+      };
+      let start = inCol(x == null ? Math.ceil(T.x0 + cols[0].L + 0.3) : x + Math.max(3, Math.ceil(cur[cur.length - 1].lastR + cols[0].L + 0.6)));
       let xs = place(start);
-      if (xs[xs.length - 1] + cols[cols.length - 1].R > xMax && cur.length) { groups.push(cur); cur = []; start = Math.ceil(T.x0 + cols[0].L + 0.3); xs = place(start); }
+      if (xs[xs.length - 1] + cols[cols.length - 1].R > xMax && cur.length) { groups.push(cur); cur = []; start = inCol(Math.ceil(T.x0 + cols[0].L + 0.3)); xs = place(start); }
       if (xs[xs.length - 1] + cols[cols.length - 1].R > xMax) errs.push(where0 + ', pad ' + (m.i + 1) + ': het pad is te breed voor één blad');
       cur.push({ m, xs, lastR: cols[cols.length - 1].R }); x = xs[xs.length - 1];
     });

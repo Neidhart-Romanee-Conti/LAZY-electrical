@@ -276,6 +276,10 @@ test('ai: a school answer builds the fixed sheet set and is shown back for chang
   assert.deepEqual(plain(LE.ai.mustFix(r)), []);
   assert.deepEqual(plain(r.P.pages.map((p) => p.title)), ['Voedingsblad', 'Stuurschakeling', 'Ingangen', 'Uitgangen', 'Vermogenblad']);
   assert.match(LE.ai.buildPrompt({ P: r.P, question: 'voeg een lamp toe' }), /SCHOOLPROJECT: \{/);
+  const extra = Object.assign({}, school, { extraPages: [{ title: 'Verlichting', top: ['1L1'], bottom: ['1N'], paths: [{ from: '1L1', to: '1N', chain: [{ s: 'sel_no', tag: 'S30', desc: 'LICHT' }, { s: 'lamp', tag: 'P30', desc: 'VERLICHTING' }] }] }] });
+  const r3 = LE.ai.apply(M.newProject(), { school: extra });
+  assert.deepEqual(plain(LE.ai.mustFix(r3)), []);
+  assert.equal(r3.P.pages[r3.P.pages.length - 1].title, 'Verlichting');
   const bad = JSON.parse(JSON.stringify(school)); bad.outputs = bad.outputs.slice(0, 1);
   const r2 = LE.ai.apply(M.newProject(), { school: bad });
   assert.ok(LE.ai.mustFix(r2).some((e) => /rol "left" heeft geen PLC-uitgang/.test(e)));
