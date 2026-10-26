@@ -388,9 +388,11 @@
     cv.setAttribute('class', S.tool.name === 'select' ? 't-select' : 't-draw');
     const prims = R.renderPage(P(), pg, analysis(), { wireNumbers: S.prefs.wireNos });
     const W = T.W * g, H = T.H * g;
-    const selCss = [...S.sel].map((id) => '#cv .page g[data-id="' + id + '"] *{stroke:#e8590c}#cv .page g[data-id="' + id + '"] text{fill:#e8590c}').join('');
+    /* highlight: lines get a coloured stroke, text only a coloured fill (a stroke on text makes it a blob) */
+    const hl = (id, col) => '#cv .page g[data-id="' + id + '"] :not(text){stroke:' + col + '}#cv .page g[data-id="' + id + '"] text{fill:' + col + '}';
+    const selCss = [...S.sel].map((id) => hl(id, '#e8590c')).join('') + (S.hover && !S.sel.has(S.hover) ? hl(S.hover, '#1971c2') : '');
     const grid = S.prefs.grid ? '<defs><pattern id="gp" width="' + g + '" height="' + g + '" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="' + (g * 0.045) + '" fill="#b8bec5"/></pattern></defs><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#gp)" pointer-events="none"/>' : '';
-    cv.innerHTML = '<style>' + selCss + '</style><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff" stroke="#5c636a" stroke-width="0.4"/>' + grid +
+    cv.innerHTML = '<style id="selcss">' + selCss + '</style><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff" stroke="#5c636a" stroke-width="0.4"/>' + grid +
       '<g class="page" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" font-family="Helvetica, Arial, sans-serif">' + R.body(prims) + '</g>' +
       '<g class="hit">' + hitMarkup(pg, g) + '</g><g id="ov" pointer-events="none"></g>';
     drawOverlay();
@@ -538,8 +540,17 @@
       const id = hit.dataset.id; if (!S.sel.has(id)) { S.sel = new Set([id]); renderCanvas(); renderProps(); }
       menu(e.clientX, e.clientY, itemMenu(id));
     });
-    cv.addEventListener('pointerleave', () => { S.cursor = null; drawOverlay(); });
+    cv.addEventListener('pointerleave', () => { S.cursor = null; setHover(null); drawOverlay(); });
+    cv.addEventListener('pointerover', (e) => { const h = S.tool.name === 'select' && !S.drag && e.target.closest && e.target.closest('.hit g[data-id]'); setHover(h ? h.dataset.id : null); });
     void lastClick;
+  }
+  /* hover highlight without redrawing the page: only the small style block changes */
+  function setHover(id) {
+    if (S.hover === id) return;
+    S.hover = id;
+    const st = $('#selcss'); if (!st) return;
+    const hl = (x, col) => '#cv .page g[data-id="' + x + '"] :not(text){stroke:' + col + '}#cv .page g[data-id="' + x + '"] text{fill:' + col + '}';
+    st.textContent = [...S.sel].map((x) => hl(x, '#e8590c')).join('') + (id && !S.sel.has(id) ? hl(id, '#1971c2') : '');
   }
   function itemMenu(id) {
     const pg = curPage(), it = pg.items.find((i) => i.id === id), A = analysis(), s = A.symById[id], out = [['Eigenschappen', () => showLeft('props')]];
