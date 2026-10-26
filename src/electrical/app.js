@@ -51,7 +51,7 @@
   const S = {
     H: null, tabs: [], active: -1, sel: new Set(), tool: { name: 'select' }, views: {}, clip: null, A: null, checks: null,
     rtab: 'start', ltab: 'tree', rdock: 'syms', prefs: Object.assign({ grid: true, wireNos: true, favs: ['no', 'nc', 'coil', 'pb_no', 'pb_nc', 'lamp', 'term'], left: true, right: true, model: 'claude-opus-5-5', remember: false }, lsGet(PREF, {})),
-    cursor: null, lastMaster: '', showChecks: false, findResults: null, treeOpen: lsGet(PREF + '.tree', {})
+    cursor: null, lastMaster: '', showChecks: false, findResults: null, treeOpen: lsGet(PREF + '.tree', {}), closed: new Set()
   };
   const P = () => S.H.P;
   const savePrefs = () => lsSet(PREF, S.prefs);
@@ -71,8 +71,7 @@
     o = o || {};
     S.A = null; S.checks = null;
     PT.setProject(P());
-    S.tabs = S.tabs.filter((t) => t.kind !== 'page' || M.findPage(P(), t.id));
-    if (S.active >= S.tabs.length) S.active = S.tabs.length - 1;
+    syncPageTabs();
     const pg = curPage();
     if (pg) { const ids = new Set(pg.items.map((i) => i.id)); S.sel.forEach((id) => { if (!ids.has(id)) S.sel.delete(id); }); } else S.sel.clear();
     persist(); renderAll(o);
@@ -87,9 +86,16 @@
     }
     catch (e) { console.error(e); toast(e.message || String(e)); return null; }
   }
+  /* every sheet of the project has a tab, in sheet order (unless the user closed it); lists and tables follow */
+  function syncPageTabs() {
+    const act = curTab(), pages = P().pages.filter((pg) => !S.closed.has(pg.id));
+    S.tabs = pages.map((pg) => ({ kind: 'page', id: pg.id })).concat(S.tabs.filter((t) => t.kind !== 'page'));
+    S.active = act ? S.tabs.findIndex((t) => t.kind === act.kind && (t.id || t.key) === (act.id || act.key)) : -1;
+    if (S.active < 0 && S.tabs.length) S.active = 0;
+  }
   function setProject(Pn, label) {
     if (label) S.H.replace(label, Pn); else S.H.reset(Pn);
-    S.tabs = []; S.active = -1; S.sel.clear(); S.views = {};
+    S.tabs = []; S.active = -1; S.sel.clear(); S.views = {}; S.closed = new Set();
     const first = P().pages.find((p) => p.kind !== 'cover') || P().pages[0];
     changed();
     if (first) openPage(first.id);
@@ -296,6 +302,7 @@
      Tabs and views
      ===================================================================== */
   function openTab(t) {
+    if (t.kind === 'page' && S.closed.has(t.id)) { S.closed.delete(t.id); syncPageTabs(); }
     let i = S.tabs.findIndex((x) => x.kind === t.kind && (x.id || x.key) === (t.id || t.key));
     if (i < 0) { S.tabs.push(t); i = S.tabs.length - 1; }
     S.active = i; S.sel.clear();
@@ -303,7 +310,7 @@
     renderAll();
   }
   function openPage(id) { openTab({ kind: 'page', id }); }
-  function closeTab(i) { S.tabs.splice(i, 1); if (S.active >= i) S.active = Math.max(0, S.active - 1); if (!S.tabs.length) S.active = -1; S.sel.clear(); renderAll(); }
+  function closeTab(i) { if (S.tabs[i] && S.tabs[i].kind === 'page') S.closed.add(S.tabs[i].id); S.tabs.splice(i, 1); if (S.active >= i) S.active = Math.max(0, S.active - 1); if (!S.tabs.length) S.active = -1; S.sel.clear(); renderAll(); }
   function tabLabel(t) {
     if (t.kind === 'page') { const pg = M.findPage(P(), t.id); return pg ? M.pageLabel(pg) + ' · ' + (pg.title || 'blad') : '?'; }
     if (t.kind === 'list') return LISTNAMES[t.key] || t.key;
@@ -1122,7 +1129,7 @@
     const before = P().pages.map((p) => p.id);
     S.H.replace('AI-assistent', res.P); changed();
     const fresh = P().pages.find((p) => before.indexOf(p.id) < 0 && p.kind !== 'cover') || P().pages.find((p) => p.kind !== 'cover');
-    S.tabs = []; S.active = -1; if (fresh) openPage(fresh.id);
+    S.closed = new Set(); S.tabs = []; S.active = -1; syncPageTabs(); if (fresh) openPage(fresh.id);
     const rest = (res.remaining || []).length, warn = (res.warnings || []).length;
     aiStatus((res.uitleg || 'Klaar.') + (rest ? '\n\nNog niet opgelost (' + rest + '): ' + res.remaining.slice(0, 5).join(' · ') : '') + (warn ? '\n\nWaarschuwingen: ' + warn + ' (zie Controle).' : '') + '\n\n(' + res.attempts + ' ronde' + (res.attempts > 1 ? 's' : '') + ')');
     $('#aiUndo').hidden = false;
@@ -1226,6 +1233,7 @@
     PT.setProject(Pn);
     bind(); layoutDocks(); renderDockTabs(); renderSymbols();
     const first = Pn.pages.find((p) => p.kind !== 'cover') || Pn.pages[0];
+    syncPageTabs();
     if (first) openPage(first.id); else renderAll();
     if (note) toast(note, 6500);
     if (window.claude && window.claude.use) {
