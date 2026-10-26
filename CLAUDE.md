@@ -31,6 +31,48 @@
   - LAZY Logo can link a LAZY Electrical project: its inputs/outputs become fixed constraints for the AI, and interlocks are checked by random simulation.
 - **AI on claude.ai** uses the artifact `sample` capability (`window.claude.use('sample')`). Elsewhere it falls back to copy-paste mode.
 
+## Decisions and preferences (from earlier work with the owner)
+
+**Look and feel**
+- Plain black and white with IBM Plex Sans/Mono, square borders, no colors.
+- Header logo: an inverted **LAZY** block followed by the app name.
+- Keep the UI lean. The owner explicitly asked to remove:
+  - explanation texts and hint paragraphs;
+  - example placeholder texts in input fields;
+  - "save as example" features;
+  - notes about the Claude account.
+- Don't add such texts back. Short labels are enough.
+- Every form section can be collapsed (remembered per browser). In drawing mode (Tekenen) the whole form panel is hidden by default, with a "Formulier tonen" button.
+
+**Drawing conventions (the owner's school layout)**
+- A4 landscape, frame with columns 0–9 and rows A–F, title block at the bottom.
+- Sheet order:
+  1. supply (voedingsblad: L1–L3/N/PE, main breaker, PSU, breakers);
+  2. control circuit (stuurschakeling);
+  3. LOGO! inputs (ingangen) and outputs (uitgangen), with a WAGO 24 V relay per output;
+  4. power circuit (vermogenblad).
+- Device tags = sheet number + letter + column (e.g. `2K3`). Duplicates get `.1`, `.2`.
+- Cross-reference tables H/M/V under coils.
+- Terminals marked `X` + number, only for parts outside the panel. Thermal relays sit in the panel, so they get no X terminals.
+
+**Behaviour the owner asked for**
+- The AI must never show "invalid answer" errors to the user. Repair the answer, retry quietly, and only report real failures in plain Dutch.
+- Protection devices (emergency stop, stop buttons, thermal contacts) appear once at the start of a rung, then the rung branches. Never repeat them per coil.
+- "Start from two places" means two NO start buttons in parallel and two NC stop buttons in series.
+- The rules card ("Regels voor de AI") holds general rules that apply to every project. It is saved per account on claude.ai (artifact `db`) and in localStorage elsewhere.
+- In LAZY Logo, push buttons have a "vast" toggle in the simulator, so several buttons can be held at once.
+
+**Hardware**
+- **At home:** the owner has a LOGO! 24 0BA5 (6ED1 052-1CC00-0BA5, 24 V DC, transistor outputs, no Ethernet).
+- **At school:** an Ethernet LOGO!.
+- Programs reach the module through LOGO! Soft Comfort. The `bridge/` only remote-controls a LOGO! 8 over Ethernet.
+
+**Known limitations right now**
+- In drawing mode, wires don't follow when a symbol is moved.
+- Tags and cross-references don't update after hand edits; that needs the component model.
+- PDF export of hand-edited drawings hasn't been tested on real output yet.
+- The public build uses simple built-in symbols. The owner's own builds use the private library in `symbols/local/`.
+
 ## Commands
 - `npm test` runs all tests.
 - `npm run build` writes `dist/index.html` and `dist/logo.html`.
