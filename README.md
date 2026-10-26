@@ -10,7 +10,6 @@ Vibe-coded electrical CAD for wiring diagrams, control panels and complete schem
 
 **LAZY Electrical**, the schematic program:
 - **Generates a full schematic set from a short form:** supply sheet, control circuit, LOGO! inputs and outputs, and power circuit.
-- **Two kinds of control circuit:** with a Siemens LOGO!, or hard-wired with contactors written as ladder rungs (timers, limit switches, reversing, star-delta, up to 3 motors).
 - **Tags and cross-references:** device tags are numbered automatically, and the cross-reference tables under coils are filled in.
 - **Drawing mode (Tekenen):** drag and drop symbols, draw wires, edit any text. Everything snaps to a 3 mm grid.
 - **AI assistant:** describe a circuit ("reverse a motor from two places without a LOGO!") and it builds the project. It checks the result and fixes mistakes automatically. You can teach it your own design rules.
