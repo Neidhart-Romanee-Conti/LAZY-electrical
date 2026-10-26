@@ -411,8 +411,8 @@ LE.auto = (function () {
   /* with page-based tags (2K3) the real tag depends on where a device ends up: renumber after layout and
      rewrite the stored page descriptions, so the drawing, the descriptions and the AI all use the same tags */
   const TAG_KEYS = ['tag', 'cable', 'contactor', 'k1', 'k2', 'k3', 'fwd', 'rev', 'main', 'star', 'delta'];
-  function retag(P) {
-    if ((P.settings || {}).tagMode === 'consecutive') return {};
+  function retag(P, always) {
+    if ((P.settings || {}).tagMode === 'consecutive' && !always) return {};
     const map = M.renumberDevices(P);
     const walk = (o) => {
       if (Array.isArray(o)) { o.forEach(walk); return; }

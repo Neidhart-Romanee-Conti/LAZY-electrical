@@ -77,8 +77,14 @@
     if (pg) { const ids = new Set(pg.items.map((i) => i.id)); S.sel.forEach((id) => { if (!ids.has(id)) S.sel.delete(id); }); } else S.sel.clear();
     persist(); renderAll(o);
   }
+  const NOT_DRAWING = /^(Projectgegevens|Instellingen|Bladeigenschappen|Schaal|Artikel|Draadnummering|Bladen hernummeren|Nieuw blad|Nieuwe kastindeling)/;
   function exec(label, fn, o) {
-    try { const r = S.H.run(label, fn); changed(o); return r; }
+    try {
+      const r = S.H.run(label, fn);
+      /* a hand edit on a generated sheet: remember it, so the AI knows a regenerated project would overwrite it */
+      const pg = curPage(); if (pg && pg.spec && !NOT_DRAWING.test(label)) pg.edited = true;
+      changed(o); return r;
+    }
     catch (e) { console.error(e); toast(e.message || String(e)); return null; }
   }
   function setProject(Pn, label) {
@@ -929,7 +935,7 @@
     else if (sec === 'new') body = '<h1>Nieuw project</h1><div class="form"><label for="np_name">Projectnaam</label><input id="np_name" value="Nieuw project"><label for="np_t">Bladformaat</label><select id="np_t">' + Object.values(M.TEMPLATES).map((t) => '<option value="' + t.id + '">' + esc(t.name) + '</option>').join('') + '</select><label for="np_m">Tags</label><select id="np_m"><option value="consecutive">Doorlopend: K1, K2 …</option><option value="pagecol">Blad + kolom: 2K3</option><option value="pagecons">Blad + volgnummer: 2K1</option></select><label for="np_l">Letters</label><select id="np_l"><option value="81346">IEC 81346 (P = lamp, T = voeding)</option><option value="old">Oudere schoolnorm (H = lamp, G = voeding)</option></select></div><p><button class="btn primary" type="button" id="np_go">Project maken</button></p><p class="note">Het huidige project wordt vervangen (Ongedaan maken kan). Bewaar het eerst als je het wilt houden.</p>';
     else if (sec === 'open') body = '<h1>Openen</h1><p><button class="btn primary" type="button" id="op_file">Bestand kiezen (.lazy.json)</button></p><p class="note">Projecten van de vorige versie van LAZY Electrical (het formulier) kun je niet openen: dat programma tekende plaatjes in plaats van toestellen en draden. Laat de AI-assistent zo\'n schakeling opnieuw opbouwen.</p>';
     else if (sec === 'save') body = '<h1>Opslaan</h1><p class="note">Het project wordt automatisch bewaard in deze browser. Bewaar het ook als bestand om het te delen of op een andere computer te openen.</p><p><button class="btn primary" type="button" data-backcmd="save">Opslaan als .lazy.json</button></p>';
-    else if (sec === 'examples') body = '<h1>Voorbeelden</h1><div class="cards">' + LE.examples.map((e) => '<button class="card" data-ex="' + e.id + '"><b>' + esc(e.name) + '</b><span>' + esc(e.spec.info.desc1 || '') + '</span></button>').join('') + '</div><p class="note">Elk voorbeeld is gemaakt met dezelfde paginabeschrijving die de AI-assistent gebruikt.</p>';
+    else if (sec === 'examples') body = '<h1>Voorbeelden</h1><div class="cards">' + LE.examples.map((e) => '<button class="card" data-ex="' + e.id + '"><b>' + esc(e.name) + '</b><span>' + esc(((e.school || e.spec).info || {}).desc1 || '') + '</span></button>').join('') + '</div>';
     else if (sec === 'export') body = '<h1>Exporteren</h1><div class="cards"><button class="card" data-backcmd="pdf"><b>PDF van de hele set</b><span>Alle bladen plus de grafische lijsten (stuklijst, klemmenplan …).</span></button><button class="card" data-backcmd="csvall"><b>Lijsten als CSV</b><span>Stuklijst, klemmen, kabels, draden en PLC voor Excel.</span></button><button class="card" id="ex_svg"><b>Huidig blad als SVG</b><span>Vectortekening van het open blad.</span></button></div>';
     else if (sec === 'info') body = '<h1>Projectgegevens</h1><p class="note">Deze gegevens staan in de titelhoek van elk blad.</p><div class="form">' + [['name', 'Projectnaam'], ['desc1', 'Omschrijving 1'], ['desc2', 'Omschrijving 2'], ['customer', 'Klant'], ['company', 'Bedrijf / school'], ['drawingNo', 'Tekeningnummer'], ['author', 'Getekend door'], ['created', 'Datum'], ['revision', 'Revisie'], ['revDate', 'Revisiedatum']].map((f) => '<label for="pi_' + f[0] + '">' + f[1] + '</label><input id="pi_' + f[0] + '" data-info="' + f[0] + '" value="' + esc(I[f[0]] || '') + '">').join('') + '</div>';
     else if (sec === 'settings') body = '<h1>Instellingen</h1><h2>Project</h2><div class="form">' +
@@ -948,7 +954,7 @@
     if (t.closest('[data-backclose]')) { closeBack(); return; }
     const b = t.closest('[data-back]'); if (b) { S.back = b.dataset.back; renderBack(); return; }
     const c = t.closest('[data-backcmd]'); if (c) { closeBack(); run(c.dataset.backcmd); return; }
-    const ex = t.closest('[data-ex]'); if (ex) { const e2 = LE.examples.find((x) => x.id === ex.dataset.ex); const r = AU.buildProject(e2.spec); setProject(r.P, 'Voorbeeld openen'); closeBack(); toast('Voorbeeld geopend: ' + e2.name); return; }
+    const ex = t.closest('[data-ex]'); if (ex) { const e2 = LE.examples.find((x) => x.id === ex.dataset.ex); setProject(buildExample(e2).P, 'Voorbeeld openen'); closeBack(); toast('Voorbeeld geopend: ' + e2.name); return; }
     if (t.id === 'np_go') {
       const Pn = M.newProject({ info: { name: $('#np_name').value || 'Nieuw project' }, settings: { template: $('#np_t').value, tagMode: $('#np_m').value, letters: $('#np_l').value } });
       M.addPage(Pn, { title: 'Voorblad', kind: 'cover' });
@@ -965,6 +971,7 @@
     if (t.dataset.set) exec('Instellingen', (Q) => { const k = t.dataset.set; Q.settings[k] = k === 'showPinNo' ? t.value === '1' : t.value; });
     if (t.id === 'ai_model' || t.id === 'ai_remember') saveAiSettings();
   }
+  function buildExample(e) { return e.school ? LE.school.buildProject(e.school) : AU.buildProject(e.spec); }
   function pickFile(accept, cb) {
     const i = document.createElement('input'); i.type = 'file'; i.accept = accept;
     i.onchange = () => { const f = i.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => cb(String(r.result)); r.readAsText(f); };
@@ -1214,7 +1221,7 @@
   function init() {
     let Pn = null, note = '';
     try { const saved = lsGet(KEY, null); if (saved) Pn = M.load(saved); } catch (e) { note = 'Het bewaarde project kon niet geladen worden; er is een voorbeeld geopend.'; }
-    if (!Pn) { Pn = AU.buildProject(LE.examples[0].spec).P; note = note || 'Welkom! Er is een voorbeeldproject geopend. Kies Bestand → Nieuw voor een leeg project, of laat de AI-assistent iets ontwerpen.'; }
+    if (!Pn) { Pn = buildExample(LE.examples[0]).P; note = note || 'Welkom! Er is een voorbeeldproject geopend. Kies Bestand → Nieuw voor een leeg project, of laat de AI-assistent iets ontwerpen.'; }
     S.H = new M.History(Pn);
     PT.setProject(Pn);
     bind(); layoutDocks(); renderDockTabs(); renderSymbols();

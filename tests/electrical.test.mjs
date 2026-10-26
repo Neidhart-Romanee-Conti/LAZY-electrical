@@ -122,7 +122,7 @@ test('model: renumbering devices follows page order and keeps locked tags', () =
   assert.deepEqual(plain(byX), ['K1', 'K2', 'K9']);
 });
 test('model: save and load round trip', () => {
-  const ex = LE.auto.buildProject(LE.examples[0].spec).P;
+  const ex = LE.auto.buildProject(LE.examples.find((e) => e.id === 'dol').spec).P;
   const back = M.load(M.serialize(ex));
   assert.equal(back.pages.length, ex.pages.length);
   assert.ok(back.seq >= ex.seq);
@@ -130,9 +130,12 @@ test('model: save and load round trip', () => {
 });
 
 /* ---------- automatic layout of every example ---------- */
+/* school examples are built from the short school format, the others from page descriptions */
+const build = (ex) => (ex.school ? LE.school.buildProject(ex.school) : LE.auto.buildProject(ex.spec));
+const pagesOf = (ex) => (ex.school ? LE.school.build(ex.school).spec.pages : ex.spec.pages);
 for (const ex of LE.examples) {
   test('layout: ' + ex.name, () => {
-    const r = LE.auto.buildProject(ex.spec);
+    const r = build(ex);
     assert.deepEqual(plain(r.errors), []);
     const P = r.P;
     assert.deepEqual(gridIssues(P), []);
@@ -145,7 +148,7 @@ for (const ex of LE.examples) {
   test('layout nets: ' + ex.name, () => {
     /* rebuild page by page with a trace, then compare the promised connections with the drawn ones */
     const P = NP(), errs = [];
-    for (const ps of ex.spec.pages) {
+    for (const ps of pagesOf(ex)) {
       const trace = [];
       LE.auto.buildPage(P, ps, errs, { trace });
       const A = M.analyze(P);
@@ -255,7 +258,7 @@ test('cabinet: pick list, snapping onto a DIN rail, heat and rail length in the 
 
 /* ---------- AI ---------- */
 test('ai: a full project answer is applied and checked', () => {
-  const reply = { project: LE.examples[1].spec, _uitleg: 'ok' };
+  const reply = { project: LE.examples.find((e) => e.id === 'rev').spec, _uitleg: 'ok' };
   const r = LE.ai.apply(M.newProject(), LE.ai.parse('```json\n' + JSON.stringify(reply) + '\n```'));
   assert.deepEqual(plain(LE.ai.mustFix(r)), []);
   assert.ok(r.P.pages.length >= 3);
@@ -266,6 +269,16 @@ test('ai: ops change an existing project without touching other pages', () => {
   assert.deepEqual(plain(LE.ai.mustFix(r)), []);
   assert.equal(r.P.pages.length, P.pages.length + 1);
   assert.equal(P.pages.length, 3, 'original project is not changed');
+});
+test('ai: a school answer builds the fixed sheet set and is shown back for changes', () => {
+  const school = LE.examples.find((e) => e.id === 'school_rev').school;
+  const r = LE.ai.apply(M.newProject(), { school, _uitleg: 'ok' });
+  assert.deepEqual(plain(LE.ai.mustFix(r)), []);
+  assert.deepEqual(plain(r.P.pages.map((p) => p.title)), ['Voedingsblad', 'Stuurschakeling', 'Ingangen', 'Uitgangen', 'Vermogenblad']);
+  assert.match(LE.ai.buildPrompt({ P: r.P, question: 'voeg een lamp toe' }), /SCHOOLPROJECT: \{/);
+  const bad = JSON.parse(JSON.stringify(school)); bad.outputs = bad.outputs.slice(0, 1);
+  const r2 = LE.ai.apply(M.newProject(), { school: bad });
+  assert.ok(LE.ai.mustFix(r2).some((e) => /rol "left" heeft geen PLC-uitgang/.test(e)));
 });
 test('ai: the loop feeds errors back and accepts the corrected answer', async () => {
   const bad = { project: { pages: [{ title: 'S', top: ['L1'], bottom: ['N'], paths: [{ from: 'L1', to: 'N', chain: [{ s: 'coil', tag: 'K1' }, { s: 'pb_no' }] }] }] } };

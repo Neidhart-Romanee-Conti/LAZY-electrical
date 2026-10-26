@@ -1,62 +1,46 @@
-/* Example projects, written in the same page description format the AI assistant uses.
-   They are the "Voorbeelden" in the File menu, the test cases for the layout engine and worked examples for the AI. */
+/* Example projects: the "Voorbeelden" in the File menu, test cases for the layout engine and worked examples for the AI.
+   School examples (school: …) use the short school-project format (school.js) that builds the fixed sheet set;
+   the others (spec: …) use the free page-description format (auto.js). */
 var LE = typeof LE !== 'undefined' ? LE : {};
 LE.examples = [
   {
-    /* the owner's school layout: supply sheet, control sheet, inputs, outputs (one 24 V interface relay per LOGO! output), power sheet */
-    id: 'logo_rev', name: 'Omkeerschakeling met LOGO! (schoolindeling)',
-    spec: {
-      info: { name: 'Loopband links/rechts met LOGO!', desc1: 'Omkeerschakeling met noodstopkring en interfacerelais', author: 'LAZY' },
-      cover: false,
-      devices: { K2: { desc: 'LOGO! 24', part: '6ED1 052-1CC00-0BA5', maker: 'Siemens' } },
-      pages: [
-        {
-          title: 'Voedingsblad', top: ['L1', 'L2', 'L3', 'N', 'PE'], mid: ['L1.1', 'L2.1', 'L3.1', 'N.1'],
-          paths: [
-            { from: ['L1', 'L2', 'L3', 'N'], to: ['L1.1', 'L2.1', 'L3.1', 'N.1'], chain: [{ s: 'term', tag: 'X1' }, { s: 'mcb4', tag: 'Q1', desc: 'HOOFDAUTOMAAT', desc2: 'C20A 4P' }] },
-            { from: ['L1.1', 'N.1'], pe: 'PE', out: ['+24V', '0V'], chain: [{ s: 'mcb2', tag: 'F1', desc: 'STUUR 24V', desc2: 'C6A 2P' }, { s: 'psu', tag: 'T1', desc: 'VOEDING', desc2: 'STUUR 24V' }] },
-            { from: ['L1.1', 'N.1'], out: ['1L1', '1N'], chain: [{ s: 'mcb2', tag: 'F3', desc: 'STUUR 230V', desc2: 'C10A 2P' }] },
-            { from: ['L1.1', 'L2.1', 'L3.1'], out: ['2L1', '2L2', '2L3'], chain: [{ s: 'mcb3', tag: 'F5', desc: 'LOOPBAND', desc2: 'C10A 3P' }] }
-          ]
-        },
-        {
-          title: 'Stuurschakeling', top: ['+24V', '1L1'], bottom: ['0V', '1N'],
-          paths: [
-            { from: '+24V', to: '0V', chain: [{ s: 'logo', tag: 'K2' }] },
-            { from: '+24V', to: '0V', chain: [{ s: 'term', tag: 'X2' }, { s: 'estop', tag: 'S5', desc: 'NOODSTOP' }, { s: 'term', tag: 'X2' }, { s: 'coil', tag: 'K5', desc: 'NOOD', desc2: 'WAGO 24V', part: 'GEN-IR-24V-1CO' }] },
-            { from: '1L1', to: '1N', chain: [{ s: 'no', tag: 'K5' }, { s: 'coil', tag: 'Q5', desc: 'NOOD', desc2: '230V' }] },
-            { from: '1L1', to: '1N', chain: [{ s: 'no', tag: 'K6' }, { s: 'nc', tag: 'Q8' }, { s: 'coil', tag: 'Q7', desc: 'LOOPBAND', desc2: 'RECHTS 230V' }] },
-            { from: '1L1', to: '1N', chain: [{ s: 'no', tag: 'K7' }, { s: 'nc', tag: 'Q7' }, { s: 'coil', tag: 'Q8', desc: 'LOOPBAND', desc2: 'LINKS 230V' }] }
-          ]
-        },
-        {
-          title: 'Ingangen', top: ['+24V'], bottom: ['0V'],
-          paths: [
-            { from: '+24V', chain: [{ s: 'term', tag: 'X2' }, { s: 'pb_nc', tag: 'S1', desc: 'STOP' }, { s: 'term', tag: 'X2' }, { s: 'plc_di', tag: 'K2', addr: 'I1', desc: 'STOP' }] },
-            { from: '+24V', chain: [{ s: 'term', tag: 'X2' }, { s: 'estop', tag: 'S5' }, { s: 'term', tag: 'X2' }, { s: 'plc_di', tag: 'K2', addr: 'I2', desc: 'NOODSTOP' }] },
-            { from: '+24V', chain: [{ s: 'th_nc', tag: 'B1' }, { s: 'plc_di', tag: 'K2', addr: 'I3', desc: 'THERMISCH', desc2: 'CONTACT' }] },
-            { from: '+24V', chain: [{ s: 'term', tag: 'X2' }, { s: 'pb_no', tag: 'S6', desc: 'START', desc2: 'RECHTS' }, { s: 'term', tag: 'X2' }, { s: 'plc_di', tag: 'K2', addr: 'I4', desc: 'START RECHTS' }] },
-            { from: '+24V', chain: [{ s: 'term', tag: 'X2' }, { s: 'pb_no', tag: 'S7', desc: 'START', desc2: 'LINKS' }, { s: 'term', tag: 'X2' }, { s: 'plc_di', tag: 'K2', addr: 'I5', desc: 'START LINKS' }] }
-          ]
-        },
-        {
-          title: 'Uitgangen', top: ['+24V'], bottom: ['0V'],
-          paths: [
-            { from: '+24V', to: '0V', chain: [{ s: 'plc_do', tag: 'K2', addr: 'Q1', desc: 'MOTOR RECHTS' }, { s: 'coil', tag: 'K6', desc: 'MOTOR RECHTS', desc2: 'WAGO 24V', part: 'GEN-IR-24V-1CO' }] },
-            { from: '+24V', to: '0V', chain: [{ s: 'plc_do', tag: 'K2', addr: 'Q2', desc: 'MOTOR LINKS' }, { s: 'coil', tag: 'K7', desc: 'MOTOR LINKS', desc2: 'WAGO 24V', part: 'GEN-IR-24V-1CO' }] }
-          ]
-        },
-        {
-          title: 'Vermogenblad', top: ['2L1', '2L2', '2L3', 'PE'],
-          paths: [
-            { macro: 'rev', from: ['2L1', '2L2', '2L3'], pe: 'PE', breaker: false, pre: [{ s: 'main3', tag: 'Q5' }], fwd: { tag: 'Q7' }, rev: { tag: 'Q8' }, ol: { tag: 'B1' }, term: { tag: 'X3' }, motor: { tag: 'M1', desc: 'LOOPBAND' } }
-          ]
-        }
-      ]
+    /* the owner's reference drawing: LOGO! 24, reversing conveyor, emergency stop circuit, interface relays */
+    id: 'school_rev', name: 'Omkeerschakeling met LOGO! (school)',
+    school: {
+      info: { name: 'Loopband links/rechts met LOGO!', desc1: 'Omkeerschakeling met noodstop', author: 'LAZY' },
+      plc: '0BA5', estop: true,
+      motors: [{ name: 'LOOPBAND', type: 'REV', breaker: 'C10A' }],
+      inputs: [{ n: 1, desc: 'STOP', kind: 'NC' }, { n: 2, desc: 'NOODSTOP', kind: 'ESTOP' }, { n: 3, desc: 'THERMISCH CONTACT', kind: 'THERMAL', m: 0 }, { n: 4, desc: 'START RECHTS', kind: 'NO' }, { n: 5, desc: 'START LINKS', kind: 'NO' }],
+      outputs: [{ n: 1, desc: 'MOTOR RECHTS', load: 'M:0:right' }, { n: 2, desc: 'MOTOR LINKS', load: 'M:0:left' }]
     }
   },
   {
-    id: 'dol', name: 'Motor direct starten (start/stop)',
+    /* the owner's hard-wired drawing: direct start with emergency stop, lamps and a motion detector */
+    id: 'school_dol', name: 'Direct starten, bedraad (school)',
+    school: {
+      info: { name: 'Loopband direct starten', desc1: 'Bedrade sturing met noodstop en signaallampen', author: 'LAZY' },
+      plc: 'none', estop: true,
+      motors: [{ name: 'LOOPBAND', type: 'DOL', breaker: 'C10A' }],
+      ladder: { rungs: [
+        [{ t: 'NC', kind: 'estop', dev: 'S1', name: 'NOODSTOP' }, { t: 'NC', kind: 'push', dev: 'S2', name: 'STOP' }, { t: 'NC', kind: 'thermal', m: 0 }, { par: [[{ t: 'NO', kind: 'push', dev: 'S3', name: 'START' }], [{ t: 'NO', kind: 'aux', dev: 'Q1' }]] }, { coil: 'Q1', type: 'contactor', name: 'LOOPBAND', drives: '0:run' }],
+        [{ t: 'NO', kind: 'aux', dev: 'Q1' }, { lamp: 'P2', name: 'LOOPBAND AAN' }],
+        [{ t: 'NC', kind: 'aux', dev: 'Q1' }, { lamp: 'P4', name: 'LOOPBAND UIT' }],
+        [{ t: 'NO', kind: 'sensor', dev: 'B5', name: 'BEWEGINGSMELDER' }, { lamp: 'P5', name: 'BEWEGING' }]
+      ] }
+    }
+  },
+  {
+    id: 'school_yd', name: 'Ster-driehoek met LOGO! (school)',
+    school: {
+      info: { name: 'Ventilator ster-driehoek met LOGO!', desc1: 'Omschakeling ster naar driehoek door de PLC', author: 'LAZY' },
+      plc: '24CE', estop: true,
+      motors: [{ name: 'VENTILATOR', type: 'YD', breaker: 'C25A', power: '11 kW' }],
+      inputs: [{ n: 1, desc: 'START', kind: 'NO' }, { n: 2, desc: 'STOP', kind: 'NC' }, { n: 3, desc: 'NOODSTOP', kind: 'ESTOP' }, { n: 4, desc: 'THERMISCH CONTACT', kind: 'THERMAL', m: 0 }],
+      outputs: [{ n: 1, desc: 'NET', load: 'M:0:main' }, { n: 2, desc: 'STER', load: 'M:0:star' }, { n: 3, desc: 'DRIEHOEK', load: 'M:0:delta' }, { n: 4, desc: 'STORING', load: 'LAMP' }]
+    }
+  },
+  {
+    id: 'dol', name: 'Motor direct starten (start/stop) — vrije indeling',
     spec: {
       info: { name: 'Pomp direct starten', desc1: 'Start/stop met motorbeveiligingsschakelaar', author: 'LAZY' },
       pages: [
@@ -79,7 +63,7 @@ LE.examples = [
     }
   },
   {
-    id: 'rev', name: 'Omkeerschakeling (links/rechts)',
+    id: 'rev', name: 'Omkeerschakeling (links/rechts) — vrije indeling',
     spec: {
       info: { name: 'Transportband omkeren', desc1: 'Rechts/links met elektrische vergrendeling', author: 'LAZY' },
       pages: [
@@ -110,7 +94,7 @@ LE.examples = [
     }
   },
   {
-    id: 'yd', name: 'Ster-driehoekschakeling met tijdrelais',
+    id: 'yd', name: 'Ster-driehoekschakeling met tijdrelais — vrije indeling',
     spec: {
       info: { name: 'Ventilator ster-driehoek', desc1: 'Automatische omschakeling na 5 s', author: 'LAZY' },
       pages: [
@@ -142,7 +126,7 @@ LE.examples = [
     }
   },
   {
-    id: 'logo', name: 'Pomp met LOGO! 12/24RCE',
+    id: 'logo', name: 'Pomp met LOGO! 12/24RCE — vrije indeling',
     spec: {
       info: { name: 'Pompsturing met LOGO!', desc1: 'Start/stop en niveauvlotter via de PLC', author: 'LAZY' },
       devices: { K1: { desc: 'LOGO! 12/24RCE', part: '6ED1 052-1MD08-0BA1', maker: 'Siemens' } },

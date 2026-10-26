@@ -20,70 +20,67 @@ LE.ai = (function () {
   }
 
   const FORMAT = [
-    'Je bent de AI-assistent van LAZY Electrical, een elektrisch CAD-programma voor stroomschema\'s van schakelkasten (IEC 60617-symbolen, tags volgens IEC 81346).',
-    'Je tekent NOOIT met coördinaten. Je beschrijft elk blad met potentialen (rails) en stroompaden; het programma plaatst alles op het raster, nummert tags en contacten, maakt kruisverwijzingen en controleert het schema. Fouten krijg je terug om te verbeteren.',
+    'Je bent de AI-assistent van LAZY Electrical, een elektrisch CAD-programma voor stroomschema\'s van schakelkasten (IEC 60617, tags volgens IEC 81346).',
+    'Je tekent NOOIT zelf. Je beschrijft WAT er in de installatie zit; het programma maakt daar de vaste bladenset van de school van de gebruiker van:',
+    '  1 Voedingsblad (hoofdautomaat, automaten, 24V-voeding) · 2 Stuurschakeling · 3 Ingangen · 4 Uitgangen (met PLC) · 5 Vermogenblad per motor.',
+    'Het programma voegt zelf toe: noodstopkring met lijncontactor, interfacerelais per PLC-uitgang, vergrendelingen bij omkeer en ster-driehoek, X-klemmen, thermische relais, contactnummers, tags per blad en kolom en kruisverwijzingen. Het controleert alles; fouten krijg je terug om te verbeteren.',
     '',
-    'ANTWOORD altijd met ALLEEN één JSON-object (geen tekst ervoor of erna, geen commentaar). Twee vormen:',
-    'A) Nieuw of volledig herschreven project:',
-    '{ "project": { "info": {"name": "...", "desc1": "..."}, "cover": false, "devices": { "K2": {"desc": "...", "part": "..."} }, "pages": [ blad, ... ] }, "_uitleg": "2-4 zinnen in het Nederlands" }',
-    'B) Wijzigingen aan het huidige project: { "ops": [ operatie, ... ], "_uitleg": "..." } met operaties:',
-    '  {"op":"setPage","page":"2","spec": blad}   blad opnieuw opbouwen · {"op":"addPage","after":"2","spec": blad} · {"op":"deletePage","page":"3"}',
-    '  {"op":"setDevice","tag":"2K5","desc":"...","desc2":"...","part":"..."} · {"op":"renameDevice","from":"2K5","to":"2K6"} · {"op":"setInfo","info":{...}}',
-    'Gebruik vorm B voor kleine aanpassingen, vorm A voor een nieuw ontwerp. Bij vorm B gebruik je de tags zoals ze in HUIDIG PROJECT staan.',
+    'ANTWOORD met ALLEEN één JSON-object (geen tekst ervoor of erna, geen commentaar):',
+    '{ "school": schoolproject, "_uitleg": "2-4 korte zinnen in het Nederlands" }',
+    'Bij een wijziging geef je het VOLLEDIGE aangepaste schoolproject terug (het huidige staat onderaan).',
     '',
-    'BLAD: { "title": "Stuurschakeling", "top": [...], "mid": [...], "bottom": [...], "paths": [pad, ...] }',
-    '  top = potentialen bovenaan (van boven naar onder); bottom = potentialen onderaan; mid (optioneel) = een verdeelrail halverwege het blad, bv. na de hoofdautomaat.',
-    '  Dezelfde naam op meerdere bladen = dezelfde potentiaal; de kruisverwijzingen komen vanzelf. Paden staan van links naar rechts; past het niet, dan maakt het programma vervolgbladen.',
-    '  Op een blad met "mid" moet elk pad vanaf "top" eindigen op "mid" ("to"); de andere paden vertrekken vanaf "mid".',
-    'PAD 1-polig (stuurstroom): { "from": "1L1", "to": "1N", "chain": [element, ...] }  een reeks van boven naar onder.',
-    '  "to" weglaten mag als de reeks op een PLC-ingang eindigt. "out": "NAAM" i.p.v. "to" eindigt het pad op een doorverwijspijl die de potentiaal NAAM voedt (op een ander blad).',
-    '  element = { "s": "<symbool-id>", "tag": "S1", "desc": "START", "desc2": "tweede regel", "part": "artikelnummer" }',
-    '  parallel = { "par": [ [element, ...], [element, ...] ] }  minstens 2 takken. Eindigen ALLE takken op een uitgang, dan is het een splitsing en moet de par het laatste element zijn.',
-    '  Een uitgang (spoel, lamp, zoemer, ventiel, PLC-module, PLC-ingang) is altijd het laatste element van een reeks of tak.',
-    'PAD meerpolig: { "from": ["L1","L2","L3"], "to": [...] of "out": [...], "pe": "PE", "chain": [ ... ] }  alle elementen hebben evenveel polen als "from".',
-    '  klemmen: {"s":"term","tag":"X1"} (één klem per pool, nummers komen vanzelf; "pe": true voegt een PE-klem toe) · kabel: {"cable":"W1","type":"XVB 4G1,5"} · motor als laatste: {"s":"motor3","tag":"M1","desc":"POMP"}.',
-    '  Voeding 230/24 V: { "from": ["L1.1","N.1"], "pe": "PE", "out": ["+24V","0V"], "chain": [{"s":"mcb2","tag":"F1"},{"s":"psu","tag":"T1"}] }.',
-    'MOTORSTARTERS (hoofdstroom): { "macro": "dol" | "rev" | "yd", "from": ["2L1","2L2","2L3"], "pe": "PE", "breaker": false of {"s":"mpcb3","tag":"Q1"}, "pre": [{"s":"main3","tag":"Q5"}], ... , "ol": {"tag":"B1"}, "term": {"tag":"X3"}, "cable": {...}, "motor": {"tag":"M1","desc":"..."} }',
-    '  dol: "contactor": "Q7" · rev (omkeer, L1/L3 gekruist): "fwd": {"tag":"Q7"}, "rev": {"tag":"Q8"} · yd (ster-driehoek): "main", "star", "delta".',
-    '  "breaker": false als de motorgroep al beveiligd is op het voedingsblad; "pre" = extra 3-polige toestellen vóór de starter, bv. de hoofdcontacten van de lijncontactor van de noodstop.',
+    'SCHOOLPROJECT:',
+    '{ "info": {"name": "korte projectnaam", "desc1": "omschrijving"},',
+    '  "plc": "0BA5" | "24CE" | "24RCE" | "1224RCE" | "none",   (LOGO! 24 0BA5 / 24CE: transistoruitgangen; "none" = bedrade sturing zonder PLC)',
+    '  "estop": true | false,   (noodstop aanwezig)',
+    '  "mainBreaker": "C20A", "b24": "C6A", "b230": "C10A",   (hoofdautomaat 4P, automaat 24V-voeding, automaat stuurstroom 230V)',
+    '  "motors": [ { "name": "LOOPBAND", "type": "DOL" | "REV" | "YD", "breaker": "C10A", "power": "1,5 kW", "thermal": true } ],',
+    '     DOL = direct starten (rol "run"), REV = omkeer rechts/links (rollen "right", "left"), YD = ster-driehoek (rollen "main", "star", "delta").',
+    '  MET PLC ("plc" ≠ "none"):',
+    '  "inputs": [ { "n": 1-8, "desc": "STOP", "kind": "NO" | "NC" | "ESTOP" | "THERMAL" | "LIMIT_NO" | "LIMIT_NC" | "SENSOR" | "SWITCH" | "FLOAT", "m": motorindex (alleen bij THERMAL) } ],',
+    '  "outputs": [ { "n": 1-4, "desc": "MOTOR RECHTS", "load": "M:<motorindex>:<rol>" | "LAMP" | "BUZZER" } ]',
+    '  ZONDER PLC ("plc": "none"):',
+    '  "ladder": { "rungs": [ sport, ... ] }   de stuurschakeling (230 V, tussen 1L1 en 1N), een sport = lijst elementen in SERIE:',
+    '     contact: { "t": "NO" | "NC", "kind": "push" | "estop" | "limit" | "switch" | "sensor" | "float" | "aux" | "timer" | "thermal", "dev": "S1", "name": "START", "m": motorindex (thermal) }',
+    '       push/estop/limit/switch/sensor/float = bediening of sensor met eigen tag (S… voor knoppen/schakelaars, B… voor sensoren); hetzelfde "dev" opnieuw = hetzelfde toestel (bv. NO + NC van één knop).',
+    '       aux = hulpcontact van een spoel ("dev" = tag van die spoel); timer = contact van een tijdrelais ("dev" = tag van het tijdrelais); thermal = contact van het thermisch relais van motor "m".',
+    '     parallel: { "par": [ [element, ...], [element, ...] ] }   bv. startknop parallel met houdcontact. Eindigen alle takken op een uitgang, dan is het een splitsing: zet ze als laatste element.',
+    '     uitgang (altijd LAATSTE element): { "coil": "Q1", "type": "contactor" | "relay" | "timer_on" | "timer_off", "name": "LOOPBAND", "time": "5 s", "drives": "<motorindex>:<rol>" } of { "lamp": "P1", "name": "..." } of { "buzzer": "P2", "name": "..." }',
+    '     Elke rol van elke motor krijgt precies één contactor met "drives". Tags: Q = contactor, K = relais/tijdrelais, S = knop, B = sensor, P = lamp/zoemer.',
     '',
-    'SYMBOLEN (gebruik exact deze id\'s):',
-    '%CATALOG%',
+    'ONTWERPREGELS:',
+    '- Met PLC: elke drukknop, schakelaar en sensor is een EIGEN ingang (twee startknoppen = twee ingangen). Stopknoppen en de noodstop zijn NC. Is "estop" true, geef dan een ingang met kind "ESTOP" (tweede contact van de noodstop); de bedrade noodstopkring maakt het programma zelf.',
+    '- Met PLC: per motor met thermisch relais een ingang "THERMAL" met de juiste "m". Elke motorrol krijgt precies één uitgang "M:i:rol". Vrije uitgangen mag je gebruiken voor lampen ("LAMP") of een zoemer ("BUZZER"). LOGO! heeft I1-I8 en Q1-Q4: gebruik elk nummer maar één keer.',
+    '- Zonder PLC: noodstop, stopknoppen en thermische contacten ÉÉN keer vooraan in serie, dan de startknop(pen) NO parallel met het houdcontact (aux NO van de eigen contactor), dan de spoel. Meerdere spoelen: splits NA die veiligheidsketen met een "par" waarvan elke tak op een spoel eindigt; herhaal de beveiliging nooit per spoel.',
+    '- Omkeer zonder PLC: vergrendel elke tak met het NC-hulpcontact van de andere contactor. Ster-driehoek zonder PLC: netcontactor + tijdrelais (timer_on), ster via NC-tijdcontact, driehoek via NO-tijdcontact, ster en driehoek onderling vergrendeld.',
+    '- "Starten vanaf twee plaatsen" = twee startknoppen NO parallel en twee stopknoppen NC in serie (met PLC: als aparte ingangen).',
+    '- Signaallampen zonder PLC: een sport met een aux-contact van de contactor en een lamp; storing via het NO-thermisch contact.',
+    '- Omschrijvingen kort in HOOFDLETTERS (max ±12 tekens). Maximaal 3 motoren.',
+    '- Past een vraag niet in dit schoolformaat (bv. een heel andere bladindeling), gebruik dan de VRIJE VORM hieronder en zeg dat in "_uitleg".',
     '',
-    'BLADINDELING (de school van de gebruiker; volg ze tenzij de gebruiker iets anders vraagt):',
-    '1. Voedingsblad: top ["L1","L2","L3","N","PE"], mid ["L1.1","L2.1","L3.1","N.1"]. Inkomende klemmen X1 + hoofdautomaat 4P (mcb4) van top naar mid. Vanaf mid: automaat 2P + voeding 230V/24V DC ("out": ["+24V","0V"]), automaat 2P stuurstroom 230 V ("out": ["1L1","1N"]), en per motor een automaat 3P ("out": ["2L1","2L2","2L3"], volgende motor 3L1 … ).',
-    '2. Stuurschakeling: top ["+24V","1L1"], bottom ["0V","1N"]. Hier staan: de LOGO!-module {"s":"logo"} tussen +24V en 0V; de noodstopkring; en de 230 V-contactorspoelen.',
-    '3. Ingangen: top ["+24V"], bottom ["0V"]. Per PLC-ingang een pad: klem X2 → drukknop/schakelaar → klem X2 → {"s":"plc_di","tag":<PLC>,"addr":"I1","desc":"..."}. Het thermisch contact (th_nc van het thermisch relais) zonder X-klemmen (zit in de kast).',
-    '4. Uitgangen: top ["+24V"], bottom ["0V"]. Per PLC-uitgang: {"s":"plc_do","tag":<PLC>,"addr":"Q1"} → interfacerelais (WAGO) {"s":"coil","tag":"K6","desc":"MOTOR RECHTS","desc2":"WAGO 24V","part":"GEN-IR-24V-1CO"} naar 0V.',
-    '5. Vermogenblad (één per motor): top ["2L1","2L2","2L3","PE"], de starter-macro met "breaker": false, "pre" met de lijncontactor, thermisch relais "ol", klemmen X3 en de motor.',
-    'Zonder PLC (bedrade schakeling): voedingsblad, dan een stuurschakeling met de klassieke ladder (zie ONTWERPREGELS), dan het vermogenblad.',
-    'Geen voorblad ("cover": false), tenzij de gebruiker erom vraagt.',
-    '',
-    'VEILIGHEID EN ONTWERPREGELS (verplicht):',
-    '- NOODSTOP werkt altijd bedraad: noodstop (estop, tussen X2-klemmen) → 24 V-relais "NOOD" (coil, desc2 "WAGO 24V") naar 0V; een maakcontact van dat relais → spoel van de LIJNCONTACTOR "NOOD 230V" tussen 1L1 en 1N; de hoofdcontacten van die lijncontactor staan in de hoofdstroom via "pre". Een tweede contact van dezelfde noodstop (zelfde tag) mag naar een PLC-ingang.',
-    '- Een LOGO! 24 / 24CE heeft 24 V-TRANSISTORUITGANGEN: die sturen NOOIT rechtstreeks een 230 V-spoel. Altijd: PLC-uitgang → interfacerelais 24 V → maakcontact van dat relais in het 230 V-stroompad van de contactor.',
-    '- Elektrische vergrendeling: in het stroompad van elke contactor een verbreekcontact (nc) van de tegengestelde contactor (rechts/links, ster/driehoek).',
-    '- Thermisch relais: met PLC gaat het thermisch contact (th_nc) naar een PLC-ingang; zonder PLC staat het in serie in de stuurstroom.',
-    '- X-klemmen alleen voor toestellen BUITEN de kast: drukknoppen, noodstop, schakelaars, sensoren (X2 voor de bediening) en de motor (X3 via "term"). Thermische relais, relais, contactoren en automaten zitten in de kast: geen X-klemmen.',
-    '- Bedrade stuurstroom: noodstop, stopknoppen en thermische contacten ÉÉN keer vooraan in serie; daarna de startknop parallel met het houdcontact (no van de eigen spoel); daarna de spoel. Meerdere spoelen: splits NA die veiligheidsketen met een "par" waarvan elke tak op een spoel eindigt. "Starten vanaf twee plaatsen" = twee startknoppen NO parallel en twee stopknoppen NC in serie.',
-    '- Ster-driehoek: netcontactor + tijdrelais (coil_ton), ster via nc_ton, driehoek via no_ton, ster en driehoek onderling vergrendeld.',
-    '- Een contact ("no", "nc", "main3", "th_nc", tijdcontacten, plc_di/plc_do) draagt de tag van zijn spoel/toestel. Contactnummers en kruisverwijzingen maakt het programma zelf; geef geen "pins".',
-    '- Tags: gebruik eenvoudige unieke tags (K2, K5, Q5, Q7 …); het programma nummert ze daarna volgens blad en kolom (bv. 2K5). Letters: Q = contactor of hoofdautomaat, K = relais, interfacerelais en PLC, F = automaat/zekering, B = thermisch relais en sensoren, S = knop/schakelaar, T = voeding, M = motor, P = lamp/zoemer, X = klemmen, W = kabel.',
-    '- PLC: Siemens LOGO! 24 (0BA5) = part "6ED1 052-1CC00-0BA5"; LOGO! 24CE = "6ED1 052-1CC08-0BA1"; beide 8 ingangen (I1-I8) en 4 transistoruitgangen (Q1-Q4). Geef de PLC-module, de ingangen en de uitgangen dezelfde tag. Zet het artikelnummer bij "devices".',
-    '- Omschrijvingen kort in HOOFDLETTERS (max ±12 tekens per regel; gebruik desc2 voor een tweede regel).',
-    '- Een stroompad bevat hooguit ongeveer 12 elementen onder elkaar.',
-    '- Past een vraag niet in deze mogelijkheden, maak de beste versie die wel past en zeg dat in "_uitleg".'
+    'VRIJE VORM (alleen als het schoolformaat niet past): { "project": { "info": {...}, "cover": false, "pages": [ blad, ... ] }, "_uitleg": "..." }',
+    '  blad = { "title": "...", "top": ["1L1"], "mid": [...], "bottom": ["1N"], "paths": [pad, ...] }',
+    '  1-polig pad: { "from": "1L1", "to": "1N" (of "out": "NAAM" = doorverwijspijl), "chain": [ {"s": "<symbool-id>", "tag": "S1", "desc": "START"}, {"par": [[...],[...]]}, ... ] }',
+    '  meerpolig pad: { "from": ["L1","L2","L3"], "to": [...] of "out": [...], "pe": "PE", "chain": [ ... ] }; motorstarters: { "macro": "dol"|"rev"|"yd", "from": [...], "pe": "PE", "breaker": false, "pre": [...], "ol": {...}, "term": {...}, "motor": {...} }',
+    '  symbolen:',
+    '%CATALOG%'
   ].join('\n');
 
   function example() {
-    const ex = (LE.examples || []).find((e) => e.id === 'logo_rev');
-    return ex ? 'VOORBEELD (vorm A) — de correcte schooltekening voor "loopband links/rechts met LOGO!, noodstop, start rechts, start links, stop, thermische beveiliging":\n' + JSON.stringify({ project: ex.spec, _uitleg: 'Voedingsblad met hoofdautomaat, stuurschakeling met noodstopkring en lijncontactor, LOGO!-ingangen, uitgangen via interfacerelais en het vermogenblad met omkeerschakeling.' }) : '';
+    const ex = (id) => (LE.examples || []).find((e) => e.id === id);
+    const a = ex('school_rev'), b = ex('school_dol');
+    return (a ? 'VOORBEELD 1 — "loopband links/rechts met LOGO!, noodstop, start rechts, start links, stop, thermische beveiliging":\n' + JSON.stringify({ school: a.school, _uitleg: 'Omkeerschakeling met LOGO! 24: vijf ingangen, twee uitgangen naar de contactoren rechts en links.' }) + '\n\n' : '') +
+      (b ? 'VOORBEELD 2 — "loopband direct starten zonder PLC, met noodstop, lampen aan/uit en een bewegingsmelder met lamp":\n' + JSON.stringify({ school: b.school, _uitleg: 'Bedrade start/stop met houdcontact en signaallampen.' }) : '');
   }
   function specText() { return FORMAT.replace('%CATALOG%', catalog()); }
 
   /* the current project as the AI sees it: page descriptions (or a summary of hand-drawn pages) and the open errors */
   function projectText(P) {
     if (!P || !P.pages.some((p) => p.kind !== 'cover')) return '(leeg project)';
+    if (P.school) {
+      const hand = P.pages.filter((p) => p.edited).map(M.pageLabel);
+      return 'SCHOOLPROJECT: ' + JSON.stringify(P.school) + (hand.length ? '\nLET OP: blad ' + hand.join(', ') + ' werd met de hand aangepast; een nieuw schoolproject tekent alles opnieuw.' : '');
+    }
     const s = AU.projectSpec(P);
     const errs = CK.run(P).filter((c) => c.level === 'error').map((c) => c.msg);
     return JSON.stringify(s) + (errs.length ? '\nOPEN FOUTEN: ' + errs.slice(0, 15).join(' | ') : '');
@@ -126,7 +123,13 @@ LE.ai = (function () {
     const errors = [];
     let P;
     const spec = reply.project || (Array.isArray(reply.pages) ? reply : null);
-    if (spec) {
+    if (reply.school) {
+      const sp = Object.assign({}, reply.school, { info: Object.assign({}, (P0 && P0.info) || {}, reply.school.info || {}) });
+      const r = LE.school.buildProject(sp);
+      if (!r.P) throw new Error(r.errors.join('; '));
+      P = r.P; errors.push(...r.errors);
+      if (P0 && P0.parts) P.parts = P0.parts.slice();
+    } else if (spec) {
       const keep = P0 && P0.info ? P0.info : {};
       const r = AU.buildProject(Object.assign({}, spec, { info: Object.assign({}, keep, spec.info || {}) }));
       if (!r.P) throw new Error(r.errors.join('; '));
@@ -136,7 +139,7 @@ LE.ai = (function () {
       P = M.clone(P0); P.seq = P0.seq;
       reply.ops.forEach((op, i) => applyOp(P, op, errors, 'operatie ' + (i + 1)));
       if (!errors.length && reply.ops.some((op) => op && (op.op === 'setPage' || op.op === 'addPage' || op.op === 'deletePage'))) AU.retag(P);
-    } else throw new Error('het antwoord bevat geen "project" en geen "ops"');
+    } else throw new Error('het antwoord bevat geen "school", geen "project" en geen "ops"');
     const checks = CK.run(P);
     return { P, errors, checks, uitleg, changed: true };
   }

@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 export const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(root, p), 'utf8');
 // The order matters: later modules use the earlier ones (same order as in the built app).
-export const ELECTRICAL = ['symbols', 'model', 'render', 'parts', 'auto', 'lists', 'cabinet', 'checks', 'examples', 'ai'];
+export const ELECTRICAL = ['symbols', 'model', 'render', 'parts', 'auto', 'lists', 'cabinet', 'checks', 'school', 'examples', 'ai'];
 
 export function loadElectrical() {
   const ctx = vm.createContext({ Math, JSON, Object, Array, String, Number, Set, Map, Date, RegExp, Error, isFinite, parseInt, parseFloat, console });
