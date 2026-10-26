@@ -53,4 +53,4 @@ docs/ROADMAP.md   where the project is going
 
 ## License
 
-Code: [AGPL-3.0](LICENSE). Siemens and LOGO! are trademarks of Siemens AG. This project is not affiliated with Siemens or with any commercial CAD vendor.
+Code: [GPL-3.0](LICENSE). Siemens and LOGO! are trademarks of Siemens AG. This project is not affiliated with Siemens or with any commercial CAD vendor.
