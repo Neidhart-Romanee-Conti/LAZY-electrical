@@ -1,678 +1,244 @@
 <title>LAZY Electrical</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
-/* Layout: plain black-on-white drafting sheet — form column left, drawing set right. One deliberate light theme. */
+/* LAZY Electrical workspace: ribbon on top, project tree and properties left, sheets in the middle,
+   symbols and AI assistant right, checks at the bottom. One deliberate light theme (drawings are black on white). */
 :root{
-  --bg:#ffffff; --panel:#ffffff; --field:#ffffff; --ink:#000000; --muted:#555555; --soft:#d9d9d9;
-  --f-ui:"IBM Plex Sans",Helvetica,Arial,sans-serif;
-  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --ink:#1d2024; --muted:#5d6670; --line:#d5d9de; --soft:#eef0f3; --panel:#f7f8fa; --white:#fff;
+  --chrome:#23272d; --chrome2:#2e333a; --chrome-ink:#e9ecef; --accent:#f2a900; --accent-ink:#1d2024;
+  --sel:#e8590c; --hover:#1971c2; --err:#c92a2a; --warn:#b26b00; --ok:#2b8a3e;
+  --f-ui:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
   color-scheme:light;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;
-  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:12px}
+body{margin:0;background:var(--soft);color:var(--ink);font-family:var(--f-ui);font-size:13px;overflow:hidden}
 button,input,select,textarea{font:inherit;color:inherit}
-.app{display:grid;grid-template-rows:auto 1fr;gap:14px;height:100%;min-height:600px}
-header{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;border-bottom:2px solid var(--ink);padding-bottom:10px}
-header h1{margin:0;font-family:var(--f-mono);font-size:22px;font-weight:600;letter-spacing:.02em}
-header h1 b{background:var(--ink);color:var(--bg);padding:0 6px;margin-right:6px;font-weight:600}
-header .sub{font-size:12px;color:var(--muted)}
-.actions{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px}
-.btn{border:1px solid var(--ink);background:var(--bg);border-radius:0;padding:7px 12px;cursor:pointer;font-weight:500}
-.btn:hover{background:var(--ink);color:var(--bg)}
-.btn.primary{background:var(--ink);color:var(--bg);font-weight:600}
-.btn.primary:hover{background:var(--bg);color:var(--ink)}
-.btn.small{padding:4px 9px;font-size:13px}
-.btn:focus-visible,.x:focus-visible,.tab:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.main{display:grid;grid-template-columns:400px minmax(0,1fr);gap:16px;min-height:0}
-@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)} .app{height:auto} .form,.preview{overflow:visible}}
-.form{overflow:auto;display:flex;flex-direction:column;gap:12px;min-height:0;padding-bottom:20px}
-.card{background:var(--panel);border:1px solid var(--ink);padding:12px;display:flex;flex-direction:column;gap:10px}
-.card h2{margin:-12px -12px 0;padding:6px 12px;font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--ink);display:flex;align-items:center;gap:8px;min-height:36px}
-.card > h2{cursor:pointer;user-select:none}
-.card > h2::before{content:"▾";font-family:var(--f-ui);font-size:12px;width:10px}
-.card.fold > h2::before{content:"▸"}
-.card.fold{padding-bottom:0;gap:0}
-.card.fold > h2{border-bottom:0}
-.card.fold > :not(h2){display:none!important}
-.card h2 .btn{margin-left:auto;text-transform:none;letter-spacing:0;font-family:var(--f-ui)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.f{display:flex;flex-direction:column;gap:3px;min-width:0}
-.f label{font-size:12px;color:var(--muted)}
-input[type=text],select,textarea{border:1px solid var(--ink);background:var(--field);border-radius:0;padding:6px 8px;width:100%;min-width:0}
-input[type=checkbox]{accent-color:#000;width:16px;height:16px}
-.check{display:flex;align-items:center;gap:8px;font-size:14px}
-.rows{display:flex;flex-direction:column;gap:6px}
-.row{display:grid;gap:6px;align-items:center}
-.row.in,.row.out{grid-template-columns:52px minmax(0,1fr) minmax(0,1.1fr) 28px}
-.row.mot{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 64px 52px 28px}
-.row .hd{font-size:11px;color:var(--muted)}
-.x{border:1px solid var(--ink);background:var(--bg);border-radius:0;width:28px;height:30px;cursor:pointer}
-.x:hover{background:var(--ink);color:var(--bg)}
-.hint{margin:0;font-size:12px;color:var(--muted);line-height:1.45}
-.formInner{display:flex;flex-direction:column;gap:12px}
-#aiCard textarea{min-height:84px;resize:vertical;font-family:var(--f-ui)}
-.aiRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.aiStatus{font-size:13px;line-height:1.45;white-space:pre-wrap}
-.aiStatus.err{font-weight:600}
-.btn:disabled{opacity:.45;cursor:default}
-.btn:disabled:hover{background:var(--bg);color:var(--ink)}
-.btn.primary:disabled:hover{background:var(--ink);color:var(--bg)}
-.warn{border:2px solid var(--ink);padding:8px 10px;font-size:13px;line-height:1.45}
-.warn strong{font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.06em;font-size:12px}
-.warn ul{margin:4px 0 0;padding-left:18px}
-.preview{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:12px}
-.tabs{display:flex;flex-wrap:wrap;gap:6px;position:sticky;top:0;background:var(--bg);padding-bottom:6px;z-index:2}
-.tab{font-family:var(--f-mono);font-size:12px;border:1px solid var(--ink);background:var(--bg);border-radius:0;padding:3px 8px;cursor:pointer}
-.tab:hover{background:var(--ink);color:var(--bg)}
-.sheet{background:#fff;border:1px solid var(--soft);overflow-x:auto}
-.sheet svg{display:block;width:100%;min-width:640px;height:auto}
-.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;font-size:13px;max-width:min(520px,90vw);opacity:0;transition:opacity .2s;pointer-events:none;text-align:center}
-.toast.show{opacity:1}
-@media (prefers-reduced-motion: reduce){.toast{transition:none}}
-/* drawing editor */
-.modebar{display:flex;gap:10px;align-items:center}
-.viewPane{display:flex;flex-direction:column;gap:12px}
-.main.noside{grid-template-columns:minmax(0,1fr)}
-.main.noside>.form{display:none}
-.viewPane[hidden]{display:none}
-.seg{display:inline-flex;border:1px solid var(--ink)}
-.seg button{border:0;background:var(--bg);padding:6px 14px;cursor:pointer;font-weight:500}
-.seg button+button{border-left:1px solid var(--ink)}
-.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
-.edBanner{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
-.edBanner[hidden]{display:none}
-#editor{display:flex;flex-direction:column;gap:8px;min-height:0}
-#editor[hidden]{display:none}
-.edTools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.edTools button{border:1px solid var(--ink);background:var(--bg);padding:5px 10px;cursor:pointer;min-width:34px}
-.edTools button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
-.edTools button:hover{background:var(--ink);color:var(--bg)}
-.edTools .sp,.edProps .sp{width:8px}
-.edProps{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border:1px solid var(--ink);padding:6px}
-.edProps[hidden]{display:none}
-.edProps .pt{font-family:var(--f-mono);font-size:13px;width:auto;min-width:4ch;padding:4px 6px}
-.edProps .sp{flex:1}
-.tab.on,.tab[aria-pressed=true]{background:var(--ink);color:var(--bg)}
-.edBody{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;height:calc(100vh - 250px);min-height:420px}
-.edPal{overflow:auto;border:1px solid var(--soft);padding:6px;display:flex;flex-direction:column;gap:4px}
-.edPal [hidden]{display:none!important}
-#palSearch{width:100%;padding:4px 6px;font-size:12px}
-.lazyico{display:block;width:26px;height:26px;flex:none}
-.palh{font-family:var(--f-mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:6px}
-.edPal button{display:flex;align-items:center;gap:6px;border:1px solid var(--soft);background:var(--bg);padding:3px 4px;cursor:grab;text-align:left;font-size:11px;line-height:1.2}
-.edPal button:hover{border-color:var(--ink)}
-.edPal button[aria-pressed=true]{border:2px solid var(--ink);background:#f0f0f0}
-.edPal svg{width:26px;height:26px;flex:none}
-.edPal svg *{stroke-width:.35;vector-effect:non-scaling-stroke}
-.edWrap{position:relative;overflow:auto;border:1px solid var(--soft);background:#f4f4f4}
-#edSvg{display:block;width:100%;height:auto;background:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
-#edSvg[data-tool=wire],#edSvg[data-tool=part]{cursor:crosshair}
-#edSvg[data-tool=text]{cursor:text}
-#edSvg[data-tool=pan]{cursor:grab}
-#edSvg text{stroke:none}
-#edSvg .hit{fill:#000;fill-opacity:0;stroke:none}
-#edSvg .hitw{stroke:#000;stroke-opacity:0;stroke-width:2.2}
-#edSvg[data-tool=sel] .o:not(.lock){cursor:move}
-#edSvg[data-tool=sel] .o:not(.lock):hover .hit{fill-opacity:.05}
-#edSvg .o.sel .hit{fill-opacity:.08;stroke:#000;stroke-width:.25;stroke-dasharray:1 .6}
-#edSvg .o.sel.w line{stroke-width:.7}
-#edSvg .o.sel.w .hitw{stroke-opacity:.12}
-#edSvg .lock{pointer-events:none}
-#edSvg .lock text{pointer-events:auto;cursor:text}
-#edSvg .hd{fill:#fff;stroke:#000;stroke-width:.3;cursor:move}
-#edSvg[data-tool=wire] .o,#edSvg[data-tool=part] .o,#edSvg[data-tool=text] .o{pointer-events:none}
-.edInline{position:absolute;z-index:5;font-family:var(--f-mono);font-size:13px;border:2px solid var(--ink);background:#fff;padding:3px 6px;min-width:90px;width:auto}
-@media (max-width:900px){
-  .edBody{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);height:auto}
-  .edPal{flex-direction:row;overflow-x:auto;overflow-y:hidden;align-items:flex-start}
-  .palh{writing-mode:vertical-rl;transform:rotate(180deg);margin:0}
-  .edPal button{flex-direction:column;flex:none;width:76px;height:74px;text-align:center;overflow:hidden}
-  .edWrap{height:65vh}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--hover);outline-offset:1px}
+.app{display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;height:100%}
+
+/* title bar + ribbon tabs */
+.title{display:flex;align-items:center;gap:12px;background:var(--chrome);color:var(--chrome-ink);padding:6px max(12px,env(safe-area-inset-left,0px)) 0 max(12px,env(safe-area-inset-left,0px));min-height:34px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.01em;white-space:nowrap}
+.brand svg{width:16px;height:20px}
+.title .proj{color:#adb5bd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.title .saved{margin-left:auto;font-size:12px;color:#adb5bd;white-space:nowrap}
+.qat{display:flex;gap:2px}
+.qat button{background:none;border:0;color:var(--chrome-ink);padding:4px;border-radius:4px;display:flex}
+.qat button:hover{background:var(--chrome2)}
+.qat svg{width:18px;height:18px}
+.rtabs{display:flex;gap:2px;background:var(--chrome);padding:0 8px;overflow-x:auto;scrollbar-width:none}
+.rtabs button{background:none;border:0;color:#ced4da;padding:7px 14px 8px;border-radius:5px 5px 0 0;white-space:nowrap}
+.rtabs button:hover{color:#fff;background:var(--chrome2)}
+.rtabs button[aria-selected=true]{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:inset 0 3px 0 var(--accent)}
+.rtabs button.file{background:var(--accent);color:var(--accent-ink);font-weight:600;margin-right:6px}
+.ribbon{display:flex;align-items:stretch;background:var(--panel);border-bottom:1px solid var(--line);min-height:92px;overflow-x:auto;padding:4px 6px 0}
+.rgroup{display:flex;flex-direction:column;border-right:1px solid var(--line);padding:0 6px}
+.rgroup .items{display:flex;align-items:flex-start;gap:2px;flex:1}
+.rgroup .col{display:flex;flex-direction:column;gap:1px}
+.rgroup .glabel{font-size:11px;color:var(--muted);text-align:center;padding:3px 0 4px;white-space:nowrap}
+.rb{display:flex;align-items:center;gap:6px;background:none;border:1px solid transparent;border-radius:4px;padding:2px 6px;white-space:nowrap;color:var(--ink)}
+.rb:hover{background:#e7f0fb;border-color:#b9d3f0}
+.rb[aria-pressed=true]{background:#fff2cc;border-color:var(--accent)}
+.rb:disabled{opacity:.4;cursor:default;background:none;border-color:transparent}
+.rb svg{width:16px;height:16px;flex:none}
+.rb.big{flex-direction:column;gap:3px;padding:4px 8px;min-width:56px;font-size:12px}
+.rb.big svg{width:28px;height:28px}
+.rgroup select,.rgroup input{border:1px solid var(--line);border-radius:3px;background:#fff;padding:2px 4px;max-width:120px}
+
+/* main work area */
+.work{display:grid;grid-template-columns:var(--lw,260px) minmax(0,1fr) var(--rw,290px);min-height:0}
+.work.noleft{grid-template-columns:0 minmax(0,1fr) var(--rw,290px)} .work.noright{grid-template-columns:var(--lw,260px) minmax(0,1fr) 0}
+.work.noleft.noright{grid-template-columns:0 minmax(0,1fr) 0}
+.dock{display:flex;flex-direction:column;min-height:0;background:var(--panel);overflow:hidden}
+.dock.left{border-right:1px solid var(--line)} .dock.right{border-left:1px solid var(--line)}
+.dtabs{display:flex;border-bottom:1px solid var(--line);background:#eceef1;flex:none}
+.dtabs button{flex:1;background:none;border:0;padding:7px 4px;color:var(--muted);border-bottom:2px solid transparent}
+.dtabs button[aria-selected=true]{color:var(--ink);font-weight:600;border-bottom-color:var(--accent);background:var(--panel)}
+.dbody{flex:1;overflow:auto;min-height:0}
+.dbody[hidden]{display:none}
+
+/* workspace tree */
+.tree{list-style:none;margin:0;padding:4px 0}
+.tree ul{list-style:none;margin:0;padding-left:14px}
+.tree .node{display:flex;align-items:center;gap:5px;padding:3px 8px;border-radius:3px;cursor:default;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
+.tree .node:hover{background:#e7f0fb}
+.tree .node.on{background:#fff2cc}
+.tree .tw{width:12px;color:var(--muted);flex:none;text-align:center}
+.tree .ic{width:16px;height:16px;flex:none;color:var(--muted)}
+.tree .no{font-family:var(--f-mono);font-size:12px;color:var(--muted);min-width:22px}
+.tree .cnt{margin-left:auto;font-size:11px;color:var(--muted)}
+
+/* properties */
+.props{padding:8px 10px;display:flex;flex-direction:column;gap:8px}
+.props h3{margin:2px 0 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.props .f{display:flex;flex-direction:column;gap:2px}
+.props label{font-size:12px;color:var(--muted)}
+.props input,.props select,.props textarea{border:1px solid var(--line);border-radius:3px;background:#fff;padding:4px 6px;width:100%}
+.props .row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.props .chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink)}
+.props .chk input{width:auto}
+.props .info{font-size:12px;color:var(--muted);line-height:1.45}
+.props .info b{color:var(--ink);font-weight:600}
+.props .btns{display:flex;flex-wrap:wrap;gap:4px}
+.btn{border:1px solid #c3c9d0;background:#fff;border-radius:4px;padding:4px 10px}
+.btn:hover{border-color:var(--hover);color:var(--hover)}
+.btn.primary{background:var(--chrome);color:#fff;border-color:var(--chrome)}
+.btn.primary:hover{background:#000;color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.cores{width:100%;border-collapse:collapse;font-size:12px}
+.cores td{padding:1px}
+.cores input{padding:2px 4px}
+
+/* symbols */
+.symfilter{padding:6px 8px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:1}
+.symfilter input{width:100%;border:1px solid var(--line);border-radius:3px;padding:5px 7px;background:#fff}
+.symcat{padding:6px 8px 2px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none}
+.symgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:3px;padding:2px 6px 6px}
+.sym{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid transparent;border-radius:4px;background:none;padding:4px 2px;font-size:10.5px;line-height:1.15;color:var(--ink);text-align:center;min-height:72px}
+.sym:hover{background:#fff;border-color:var(--line)}
+.sym[aria-pressed=true]{background:#fff2cc;border-color:var(--accent)}
+.sym svg{color:var(--ink)}
+.sym .star{align-self:flex-end;margin:-2px -1px -12px 0;font-size:11px;color:#adb5bd;line-height:1}
+.sym .star.on{color:var(--accent)}
+
+/* center: document tabs + views */
+.center{display:flex;flex-direction:column;min-width:0;min-height:0}
+.doctabs{display:flex;gap:2px;background:#e3e6ea;padding:4px 4px 0;overflow-x:auto;flex:none;scrollbar-width:thin}
+.doctab{display:flex;align-items:center;gap:6px;background:#d3d8de;border:0;border-radius:5px 5px 0 0;padding:5px 6px 5px 10px;white-space:nowrap;color:var(--muted);max-width:240px}
+.doctab span{overflow:hidden;text-overflow:ellipsis}
+.doctab[aria-selected=true]{background:#fff;color:var(--ink);font-weight:600}
+.doctab .x{border:0;background:none;color:inherit;border-radius:3px;padding:0 4px;line-height:1.2}
+.doctab .x:hover{background:#c92a2a;color:#fff}
+.view{flex:1;position:relative;min-height:0;background:#8c949c;overflow:hidden}
+.view.tableview{background:#fff;overflow:auto}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;user-select:none}
+#cv .hit *{fill:transparent;stroke:transparent;stroke-width:1.6;pointer-events:all}
+#cv.t-select .hit g{cursor:move}
+#cv.t-draw{cursor:crosshair}
+#cv .page g[data-id]:hover *{stroke:var(--hover)} #cv .page g[data-id]:hover text{fill:var(--hover)}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#f1f3f5;font-size:15px;text-align:center;padding:24px}
+.dbt{border-collapse:collapse;font-size:12.5px;min-width:100%}
+.dbt th{position:sticky;top:0;background:#eceef1;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;font-weight:600}
+.dbt td{padding:4px 8px;border-bottom:1px solid #eef0f2;vertical-align:top}
+.dbt tr.go:hover td{background:#e7f0fb;cursor:pointer}
+.dbt tr.grp td{background:#f3f4f6;font-weight:600}
+.dbt td input{border:1px solid transparent;background:transparent;padding:2px 4px;width:100%;min-width:90px}
+.dbt td input:hover,.dbt td input:focus{border-color:var(--line);background:#fff}
+.tablebar{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;left:0}
+.tablebar h2{margin:0;font-size:15px}
+.tablebar .sp{flex:1}
+
+/* bottom: checks + status bar */
+.checks{border-top:1px solid var(--line);background:var(--panel);max-height:30vh;overflow:auto;font-size:12.5px}
+.checks[hidden]{display:none}
+.checks .hd{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.checks .hd b{font-size:12px}
+.checks .hd .sp{flex:1}
+.chk-row{display:flex;gap:8px;padding:4px 10px;border-bottom:1px solid #eef0f2;cursor:pointer}
+.chk-row:hover{background:#e7f0fb}
+.lv{font-weight:700;width:16px;text-align:center}
+.lv.error{color:var(--err)} .lv.warn{color:var(--warn)} .lv.info{color:var(--muted)}
+.status{display:flex;align-items:center;gap:16px;background:var(--chrome);color:#ced4da;font-size:12px;padding:3px max(12px,env(safe-area-inset-left,0px)) calc(3px + env(safe-area-inset-bottom,0px));white-space:nowrap;overflow:hidden}
+.status button{background:none;border:0;color:inherit;padding:0}
+.status .err{color:#ff8787} .status .wrn{color:#ffc078} .status .ok{color:#8ce99a}
+.status .sp{flex:1}
+
+/* AI panel */
+.ai{padding:10px;display:flex;flex-direction:column;gap:8px}
+.ai textarea{border:1px solid var(--line);border-radius:4px;background:#fff;padding:7px;min-height:110px;resize:vertical;width:100%}
+.ai .row{display:flex;gap:6px;flex-wrap:wrap}
+.ai .hint{font-size:12px;color:var(--muted);line-height:1.45}
+.aistatus{font-size:12.5px;white-space:pre-wrap;line-height:1.45;background:#fff;border:1px solid var(--line);border-radius:4px;padding:8px;max-height:40vh;overflow:auto}
+.aistatus.err{border-color:#ffa8a8;background:#fff5f5}
+.aistatus:empty{display:none}
+.rules{display:flex;flex-direction:column;gap:3px}
+.rules .rl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px;align-items:start;font-size:12px;background:#fff;border:1px solid var(--line);border-radius:3px;padding:3px 6px}
+.rules .rl button{border:0;background:none;color:var(--muted)}
+.ai details summary{cursor:pointer;font-weight:600;font-size:12px;color:var(--muted)}
+
+/* backstage (File) */
+.back{position:fixed;inset:0;z-index:50;display:grid;grid-template-columns:220px minmax(0,1fr);background:#fff}
+.back[hidden]{display:none}
+.back nav{background:var(--chrome);color:var(--chrome-ink);display:flex;flex-direction:column;padding:12px 0 calc(12px + env(safe-area-inset-bottom,0px));gap:2px;padding-top:calc(12px + env(safe-area-inset-top,0px))}
+.back nav button{background:none;border:0;color:inherit;text-align:left;padding:9px 20px;display:flex;align-items:center;gap:10px}
+.back nav button:hover{background:var(--chrome2)}
+.back nav button[aria-selected=true]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.back nav svg{width:18px;height:18px}
+.back nav .close{margin-bottom:10px;font-weight:600}
+.back section{overflow:auto;padding:28px max(24px,env(safe-area-inset-right,0px)) 28px 32px}
+.back h1{margin:0 0 16px;font-size:24px;font-weight:600}
+.back h2{font-size:15px;margin:22px 0 8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;max-width:960px}
+.card{border:1px solid var(--line);border-radius:6px;padding:12px;background:#fff;text-align:left;display:flex;flex-direction:column;gap:6px}
+.card:hover{border-color:var(--hover);box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.card b{font-size:14px} .card span{color:var(--muted);font-size:12.5px;line-height:1.4}
+.form{display:grid;grid-template-columns:minmax(140px,200px) minmax(0,420px);gap:8px 12px;align-items:center;max-width:680px}
+.form label{color:var(--muted)}
+.form input,.form select{border:1px solid var(--line);border-radius:4px;padding:6px 8px;background:#fff;width:100%}
+.note{color:var(--muted);max-width:680px;line-height:1.5}
+
+/* dialogs, menus, toast */
+.modal{position:fixed;inset:0;background:rgba(20,24,28,.35);display:flex;align-items:center;justify-content:center;z-index:80;padding:16px}
+.modal .box{background:#fff;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.25);width:min(440px,100%);max-height:90vh;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.modal h2{margin:0;font-size:16px}
+.modal .f{display:flex;flex-direction:column;gap:3px}
+.modal label{font-size:12px;color:var(--muted)}
+.modal input,.modal select,.modal textarea{border:1px solid var(--line);border-radius:4px;padding:6px 8px;width:100%;background:#fff}
+.modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.modal .msg{color:var(--ink);line-height:1.5;white-space:pre-wrap}
+.ctx{position:fixed;z-index:90;background:#fff;border:1px solid var(--line);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:4px;min-width:180px}
+.ctx button{display:block;width:100%;text-align:left;background:none;border:0;padding:6px 10px;border-radius:4px}
+.ctx button:hover{background:#e7f0fb}
+.ctx hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
+.toast{position:fixed;left:50%;bottom:calc(36px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--chrome);color:#fff;padding:9px 14px;border-radius:6px;opacity:0;pointer-events:none;transition:.2s;z-index:100;max-width:min(560px,90vw)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+@media (max-width:860px){
+  .work{grid-template-columns:0 minmax(0,1fr) 0}
+  .work.showleft{grid-template-columns:min(260px,70vw) minmax(0,1fr) 0}
+  .work.showright{grid-template-columns:0 minmax(0,1fr) min(290px,75vw)}
+  .back{grid-template-columns:minmax(0,1fr)} .back nav{flex-direction:row;overflow-x:auto;padding:calc(6px + env(safe-area-inset-top,0px)) 6px 6px} .back nav button{padding:8px 12px;white-space:nowrap}
+  .form{grid-template-columns:minmax(0,1fr)}
 }
 </style>
 
-<div class="app">
-  <header>
-    <h1><b>LAZY</b>Electrical</h1>
-    <span class="sub">LOGO!-schakelkasten → volledige schemaset</span>
-    <div class="actions">
-      <button class="btn" id="exBtn" type="button">Voorbeeld laden</button>
-      <button class="btn" id="saveBtn" type="button">Project kopiëren</button>
-      <button class="btn" id="openBtn" type="button">Project plakken</button>
-      <button class="btn primary" id="pdfBtn" type="button">PDF downloaden</button>
-    </div>
-  </header>
-  <div class="main">
-    <div class="form">
-      <section class="card" id="aiCard">
-        <h2>AI-assistent</h2>
-        <div id="aiBody"><p class="hint">AI wordt geladen…</p></div>
-      </section>
-      <section class="card" id="teachCard">
-        <h2>Regels voor de AI</h2>
-        <div id="teachBody"></div>
-      </section>
-      <div class="formInner" id="form"></div>
-    </div>
-    <div class="preview">
-      <div class="modebar"><div class="seg" id="modeSeg" role="group" aria-label="Weergave"><button type="button" data-mode="view" aria-pressed="true">Bekijken</button><button type="button" data-mode="draw" aria-pressed="false">Tekenen</button></div><button class="btn small" type="button" id="sideBtn" style="margin-left:auto">Formulier verbergen</button></div>
-      <div class="warn edBanner" id="edBanner" hidden></div>
-      <div id="viewPane" class="viewPane">
-        <div id="warnings"></div>
-        <div class="tabs" id="tabs"></div>
-        <div id="sheets" style="display:flex;flex-direction:column;gap:14px"></div>
-      </div>
-      <div id="editor" hidden>
-        <div class="edTools" id="edTools">
-          <button type="button" data-tool="sel" aria-pressed="true" title="Selecteren en verslepen (V)">Selecteren</button>
-          <button type="button" data-tool="wire" aria-pressed="false" title="Draad tekenen (W)">Draad</button>
-          <button type="button" data-tool="text" aria-pressed="false" title="Tekst plaatsen (T)">Tekst</button>
-          <button type="button" data-tool="pan" aria-pressed="false" title="Blad verschuiven (H)">Verschuiven</button>
-          <span class="sp"></span>
-          <button type="button" data-act="undo" title="Ongedaan maken (Ctrl+Z)">↶</button>
-          <button type="button" data-act="redo" title="Opnieuw (Ctrl+Y)">↷</button>
-          <span class="sp"></span>
-          <button type="button" data-act="grid" id="edGridBtn" aria-pressed="true" title="Raster tonen en vastklikken (Alt = vrij plaatsen)">Raster</button>
-          <button type="button" data-act="align" title="Alles op dit blad op het raster zetten">Uitlijnen</button>
-          <span class="sp"></span>
-          <button type="button" data-act="zout" title="Uitzoomen">−</button>
-          <button type="button" data-act="zfit" id="edZoomTxt" title="Passend maken">100%</button>
-          <button type="button" data-act="zin" title="Inzoomen">+</button>
-        </div>
-        <div class="tabs" id="edTabs"></div>
-        <div class="edProps" id="edProps" hidden></div>
-        <div class="edBody">
-          <div class="edPal" id="edPal"></div>
-          <div class="edWrap" id="edWrap"><svg id="edSvg" viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tekenblad"></svg></div>
-        </div>
-      </div>
-    </div>
+<div class="app" id="app">
+  <div class="title">
+    <div class="brand"><svg viewBox="0 0 16 20" aria-hidden="true"><path d="M2 1h7L6 8h6L4 19l2-8H2z" fill="#f2a900"/></svg>LAZY Electrical</div>
+    <div class="qat" id="qat"></div>
+    <div class="proj" id="projName"></div>
+    <div class="saved" id="saved"></div>
   </div>
+  <div class="rtabs" id="rtabs" role="tablist" aria-label="Lint"></div>
+  <div class="ribbon" id="ribbon"></div>
+  <div class="work" id="work">
+    <aside class="dock left" aria-label="Werkruimte">
+      <div class="dtabs" role="tablist"><button type="button" data-ltab="tree" aria-selected="true">Werkruimte</button><button type="button" data-ltab="props" aria-selected="false">Eigenschappen</button></div>
+      <div class="dbody" id="treeBody"></div>
+      <div class="dbody" id="propsBody" hidden></div>
+    </aside>
+    <section class="center">
+      <div class="doctabs" id="doctabs" role="tablist" aria-label="Open bladen"></div>
+      <div class="view" id="view"></div>
+      <div class="checks" id="checks" hidden></div>
+    </section>
+    <aside class="dock right" aria-label="Symbolen en AI">
+      <div class="dtabs" role="tablist"><button type="button" data-rtab="syms" aria-selected="true">Symbolen</button><button type="button" data-rtab="ai" aria-selected="false">AI-assistent</button></div>
+      <div class="dbody" id="symBody"></div>
+      <div class="dbody" id="aiBody" hidden></div>
+    </aside>
+  </div>
+  <div class="status" id="status"></div>
 </div>
-<div class="toast" id="toast" role="status"></div>
+<div class="back" id="back" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-/*__ENGINE__*/
+/*__LE__*/
 </script>
 <script>
-(function(){
-var $=function(s){return document.querySelector(s)};
-var KEY='lazyelectrical.project';
-var store={get:function(){try{return localStorage.getItem(KEY)||localStorage.getItem('schemaforge.project')}catch(e){return null}},set:function(v){try{localStorage.setItem(KEY,v)}catch(e){}}};
-var P;
-try{P=JSON.parse(store.get())||SF.example()}catch(e){P=SF.example()}
-if(!P||!Array.isArray(P.motors))P=SF.example();
-
-var KIND={NO:'Drukknop NO (13-14)',NC:'Drukknop NC (21-22)',ESTOP:'Noodstop (NC)',THERMAL:'Thermisch relais van motor'};
-var TYPE={DOL:'Direct',REV:'Omkeer (links/rechts)',YD:'Ster-driehoek'};
-var ROLE_EN={run:'contactor',right:'rechts',left:'links',main:'net',star:'ster',delta:'driehoek'};
-
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function opt(v,l,sel){return '<option value="'+esc(v)+'"'+(String(v)===String(sel)?' selected':'')+'>'+esc(l)+'</option>'}
-function field(id,lab,val){return '<div class="f"><label for="'+id+'">'+lab+'</label><input type="text" id="'+id+'" data-k="'+id.slice(2)+'" value="'+esc(val)+'"></div>'}
-function nums(max,sel,prefix){var h='';for(var i=1;i<=max;i++)h+=opt(i,prefix+i,sel);return h}
-function loadOptions(sel){
-  var h=opt('LAMP','Signaallamp',sel)+opt('BUZZER','Zoemer',sel);
-  P.motors.forEach(function(m,i){(SF.ROLES[m.type]||SF.ROLES.DOL).forEach(function(r){h+=opt('M:'+i+':'+r,(m.name||'Motor '+(i+1))+' – '+ROLE_EN[r],sel)})});
-  return h;
-}
-var ROLE_LBL={run:'Startknoppen (parallel)',right:'Startknoppen rechts (parallel)',left:'Startknoppen links (parallel)'};
-function ensureHw(){
-  if(!P.motors[0])return null;
-  var H=SF.hwOf(P);P.hw=P.hw||{};
-  if(!Array.isArray(P.hw.stops)||!P.hw.stops.length)P.hw.stops=H.stops.slice();
-  if(!P.hw.starts||typeof P.hw.starts!=='object')P.hw.starts={};
-  H.roles.forEach(function(r){if(!Array.isArray(P.hw.starts[r])||!P.hw.starts[r].length)P.hw.starts[r]=H.starts[r].slice()});
-  if(P.hw.lamps==null)P.hw.lamps=true;
-  return H;
-}
-function hwRows(path,list,max,addLbl){
-  var h='<div class="rows">';
-  list.forEach(function(t,i){h+='<div class="row" style="grid-template-columns:minmax(0,1fr) 28px"><input type="text" aria-label="Naam drukknop" data-hw="'+path+'" data-i="'+i+'" value="'+esc(t)+'">'+(list.length>1?'<button class="x" type="button" data-hwdel="'+path+'" data-i="'+i+'" aria-label="Drukknop verwijderen">×</button>':'<span></span>')+'</div>'});
-  h+='</div>';
-  if(list.length<max)h+='<button class="btn small" type="button" data-hwadd="'+path+'" style="align-self:flex-start">'+addLbl+'</button>';
-  return h;
-}
-function ladderCard(){
-  var n=P.ladder.rungs.length;
-  var h='<section class="card"><h2>Stuurkring</h2><p class="hint">Getekend vanuit laddercode: '+n+' sport'+(n===1?'':'en')+'. De AI-assistent schrijft en wijzigt die; je kunt ze ook zelf bewerken.</p>';
-  h+='<div class="aiRow"><button class="btn small" type="button" id="ladEdit">Laddercode bewerken</button><button class="btn small" type="button" id="ladReset">Terug naar eenvoudige knoppen</button></div>';
-  h+='<div id="ladBox" hidden><textarea id="ladText" rows="12" spellcheck="false" aria-label="Laddercode" style="font-family:var(--f-mono);font-size:11px"></textarea><div class="aiRow" style="margin-top:6px"><button class="btn primary small" type="button" id="ladApply">Toepassen</button></div></div></section>';
-  return h;
-}
-function hwCard(){
-  if(P.ladder&&Array.isArray(P.ladder.rungs)&&P.ladder.rungs.length)return ladderCard();
-  var h='<section class="card"><h2>Stuurkring</h2>';
-  var H=P.motors[0]&&P.motors[0].type!=='YD'?ensureHw():null;
-  if(!H){return h+'<p class="hint">Voeg een motor toe (direct of omkeer) om de contactorschakeling te tekenen.</p></section>'}
-  h+='<div class="f"><label>Stopknoppen (in serie)</label>'+hwRows('stops',P.hw.stops,3,'Stopknop toevoegen')+'</div>';
-  var mx=H.roles.length>1?2:3;
-  H.roles.forEach(function(r){h+='<div class="f"><label>'+ROLE_LBL[r]+'</label>'+hwRows('starts:'+r,P.hw.starts[r],mx,'Startknop toevoegen')+'</div>'});
-  h+='<label class="check"><input type="checkbox" id="hwLamps"'+(P.hw.lamps!==false?' checked':'')+'> Signaallampen (draairichting en storing)</label>';
-  h+='<p class="hint">Stopknoppen staan in serie, startknoppen parallel met het houdcontact. Bij omkeer zijn de richtingen vergrendeld met de drukknoppen én de contactoren. Voor timers, eindeloopschakelaars of meerdere motoren: vraag het aan de AI-assistent of zet dit om naar laddercode.</p><button class="btn small" type="button" id="ladConvert" style="align-self:flex-start">Omzetten naar laddercode</button></section>';
-  return h;
-}
-function hwList(path){var p=path.split(':');return p[0]==='stops'?P.hw.stops:P.hw.starts[p[1]]}
-function renderForm(){
-  var h='';
-  h+='<section class="card"><h2>Project</h2><div class="grid2">'+field('p_name','Projectnaam',P.name)+field('p_tek','Getekend door (Tek.)',P.tek)+field('p_date','Datum',P.date)+field('p_nr','Tekeningnr.',P.nr)+field('p_functie','Functie',P.functie)+field('p_locatie','Locatie',P.locatie)+'</div>'+field('p_school','School of bedrijf (titelhoek)',P.school)+'</section>';
-  var plcOpts='';Object.keys(SF.PLC).forEach(function(k){plcOpts+=opt(k,SF.PLC[k].label,P.plc)});
-  h+='<section class="card"><h2>Sturing</h2><div class="grid2"><div class="f"><label for="plc">LOGO!-model</label><select id="plc">'+plcOpts+'</select></div>'+(P.plc==='none'?'':field('p_order','Bestelnummer',P.order))+'</div>'+(P.plc==='none'?'':'<p class="hint">Controleer het bestelnummer dat op je module staat.</p>')+'</section>';
-  h+='<section class="card"><h2>Voeding</h2><div class="grid2">'+field('p_mainBreaker','Hoofdautomaat (4P)',P.mainBreaker)+field('p_b24','Automaat stuur 24 V',P.b24)+field('p_b230','Automaat stuur 230 V',P.b230)+'</div><label class="check"><input type="checkbox" id="estop"'+(P.estop?' checked':'')+'> '+(P.plc==='none'?'Noodstop in de stuurkring':'Noodstopcircuit (WAGO-relais + veiligheidscontactor)')+'</label></section>';
-  h+='<section class="card"><h2>Motoren <button class="btn small" type="button" id="addMotor">Motor toevoegen</button></h2><div class="rows">';
-  if(P.motors.length)h+='<div class="row mot"><span class="hd">Naam</span><span class="hd">Type</span><span class="hd">Automaat</span><span class="hd">Thermisch</span><span></span></div>';
-  P.motors.forEach(function(m,i){
-    var t='';Object.keys(TYPE).forEach(function(k){t+=opt(k,TYPE[k],m.type)});
-    h+='<div class="row mot"><input type="text" aria-label="Naam motor" data-arr="motors" data-i="'+i+'" data-f="name" value="'+esc(m.name)+'"><select aria-label="Type motor" data-arr="motors" data-i="'+i+'" data-f="type">'+t+'</select><input type="text" aria-label="Automaat" data-arr="motors" data-i="'+i+'" data-f="breaker" value="'+esc(m.breaker)+'"><input type="checkbox" aria-label="Thermisch relais" data-arr="motors" data-i="'+i+'" data-f="thermal"'+(m.thermal!==false?' checked':'')+'><button class="x" type="button" data-del="motors" data-i="'+i+'" aria-label="Motor verwijderen">×</button></div>';
-  });
-  if(!P.motors.length)h+='<p class="hint">Nog geen motoren. Voeg er een toe om de vermogenkring te tekenen.</p>';
-  h+='</div><p class="hint">Een omkeermotor heeft twee uitgangen nodig (rechts, links), ster-driehoek drie (net, ster, driehoek).</p></section>';
-  if(P.plc==='none'){h+=hwCard();$('#form').innerHTML=h;applyFolds();return}
-  h+='<section class="card"><h2>Ingangen <button class="btn small" type="button" id="addIn">Ingang toevoegen</button></h2><div class="rows">';
-  P.inputs.forEach(function(it,i){
-    var k='';Object.keys(KIND).forEach(function(x){k+=opt(x,KIND[x],it.kind)});
-    var extra='';
-    if(it.kind==='THERMAL'){var mo='';P.motors.forEach(function(m,j){mo+=opt(j,'van '+(m.name||'Motor '+(j+1)),it.m||0)});extra='<select aria-label="Welke motor" data-arr="inputs" data-i="'+i+'" data-f="m" style="grid-column:2/4">'+mo+'</select>'}
-    h+='<div class="row in"><select aria-label="Ingangsnummer" data-arr="inputs" data-i="'+i+'" data-f="n">'+nums(8,it.n,'I')+'</select><input type="text" aria-label="Functie" placeholder="Functie, bv. START" data-arr="inputs" data-i="'+i+'" data-f="fn" value="'+esc(it.fn)+'"><select aria-label="Soort contact" data-arr="inputs" data-i="'+i+'" data-f="kind">'+k+'</select><button class="x" type="button" data-del="inputs" data-i="'+i+'" aria-label="Ingang verwijderen">×</button>'+(extra?'<span></span>'+extra:'')+'</div>';
-  });
-  h+='</div></section>';
-  h+='<section class="card"><h2>Uitgangen <button class="btn small" type="button" id="addOut">Uitgang toevoegen</button></h2><div class="rows">';
-  P.outputs.forEach(function(o,i){
-    h+='<div class="row out"><select aria-label="Uitgangsnummer" data-arr="outputs" data-i="'+i+'" data-f="n">'+nums(4,o.n,'Q')+'</select><input type="text" aria-label="Functie" placeholder="Functie, bv. motor" data-arr="outputs" data-i="'+i+'" data-f="fn" value="'+esc(o.fn)+'"><select aria-label="Wat de uitgang schakelt" data-arr="outputs" data-i="'+i+'" data-f="load">'+loadOptions(o.load)+'</select><button class="x" type="button" data-del="outputs" data-i="'+i+'" aria-label="Uitgang verwijderen">×</button></div>';
-  });
-  h+='</div><p class="hint">Elke uitgang stuurt een WAGO-relais van 24 V; het contact daarvan schakelt de lamp, zoemer of motorcontactor.</p></section>';
-  $('#form').innerHTML=h;applyFolds();
-}
-var timer=0;
-function changed(rebuildForm){
-  if(rebuildForm)renderForm();
-  if(ED.on){if(!P.drawing){P.drawing=makeDrawing();ED.undo=[];ED.redo=[];ED.sel=[];edCommit(true)}else edBanner()}
-  store.set(JSON.stringify(P));
-  clearTimeout(timer);timer=setTimeout(renderSheets,120);
-}
-function svgOf(sh){
-  var o=[];
-  sh.prims.forEach(function(p){
-    if(p.t==='l')o.push('<line x1="'+p.x1.toFixed(2)+'" y1="'+p.y1.toFixed(2)+'" x2="'+p.x2.toFixed(2)+'" y2="'+p.y2.toFixed(2)+'" stroke-width="'+p.w+'"'+(p.dash?' stroke-dasharray="1.2 .8"':'')+'/>');
-    else if(p.t==='pl')o.push('<'+(p.close?'polygon':'polyline')+' points="'+p.pts.map(function(q){return q[0].toFixed(2)+','+q[1].toFixed(2)}).join(' ')+'" fill="none" stroke-width="'+p.w+'"/>');
-    else if(p.t==='r')o.push('<rect x="'+p.x.toFixed(2)+'" y="'+p.y.toFixed(2)+'" width="'+p.w.toFixed(2)+'" height="'+p.h.toFixed(2)+'" fill="'+(p.fill==='k'?'#000':p.fill==='w'?'#fff':'none')+'" stroke-width="'+p.lw+'"/>');
-    else if(p.t==='c')o.push('<circle cx="'+p.x.toFixed(2)+'" cy="'+p.y.toFixed(2)+'" r="'+p.r+'" fill="'+(p.fill==='k'?'#000':p.fill==='w'?'#fff':'none')+'" stroke-width="'+p.lw+'"/>');
-    else if(p.t==='tx')o.push('<text x="'+p.x.toFixed(2)+'" y="'+p.y.toFixed(2)+'" font-size="'+p.size+'"'+(p.bold?' font-weight="700"':'')+(p.rot?' transform="rotate(-'+p.rot+' '+p.x.toFixed(2)+' '+p.y.toFixed(2)+')"':'')+'>'+esc(p.s)+'</text>');
-  });
-  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 210" role="img" aria-label="Blad '+sh.no+': '+esc(sh.title)+'"><rect width="297" height="210" fill="#fff"/><g stroke="#000" stroke-linecap="round" font-family="Helvetica, Arial, sans-serif" fill="#000"><style>text{stroke:none}</style>'+o.join('')+'</g></svg>';
-}
-var last=[];
-function renderSheets(){
-  var w=SF.validate(P);
-  $('#warnings').innerHTML=w.length?'<div class="warn"><strong>Controleer dit eerst</strong><ul>'+w.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul></div>':'';
-  if(typeof edBanner==='function')edBanner();
-  try{last=P.drawing&&P.drawing.sheets?P.drawing.sheets:SF.render(P)}catch(e){$('#sheets').innerHTML='<div class="warn">Dit project kan niet getekend worden: '+esc(e.message)+'</div>';return}
-  $('#tabs').innerHTML=last.map(function(s){return '<button class="tab" type="button" data-go="'+s.no+'">'+s.no+' · '+esc(s.title)+'</button>'}).join('');
-  $('#sheets').innerHTML=last.map(function(s){return '<div class="sheet" id="sheet'+s.no+'">'+svgOf(s)+'</div>'}).join('');
-}
-
-/* form events */
-$('#form').addEventListener('input',function(e){
-  var t=e.target;
-  if(t.dataset.hw){ensureHw();hwList(t.dataset.hw)[+t.dataset.i]=t.value;changed();return}
-  if(t.dataset.k){P[t.dataset.k]=t.value;changed();return}
-  if(t.dataset.arr&&t.type==='text'){P[t.dataset.arr][+t.dataset.i][t.dataset.f]=t.value;changed(t.dataset.f==='name'&&false);return}
-});
-$('#form').addEventListener('change',function(e){
-  var t=e.target;
-  if(t.id==='plc'){P.plc=t.value;P.order=SF.PLC[t.value].order;changed(true);return}
-  if(t.id==='estop'){P.estop=t.checked;changed();return}
-  if(t.id==='hwLamps'){ensureHw();P.hw.lamps=t.checked;changed();return}
-  if(t.dataset.arr){
-    var row=P[t.dataset.arr][+t.dataset.i],f=t.dataset.f;
-    if(t.type==='checkbox')row[f]=t.checked;
-    else if(f==='n'||f==='m')row[f]=+t.value;
-    else if(t.type!=='text')row[f]=t.value;
-    if(t.dataset.arr==='motors'&&f==='type')fixRoles(+t.dataset.i);
-    if(t.type==='text'&&t.dataset.arr==='motors'&&f==='name'){changed(true);return}
-    changed(t.type!=='text');
-  }
-});
-function fixRoles(mi){
-  var roles=SF.ROLES[P.motors[mi].type];
-  P.outputs.forEach(function(o){var p=String(o.load).split(':');if(p[0]==='M'&&+p[1]===mi&&roles.indexOf(p[2])<0)o.load='M:'+mi+':'+roles[0]});
-}
-$('#form').addEventListener('click',function(e){
-  var t=e.target.closest('button');if(!t)return;
-  if(t.id==='ladConvert'){P.ladder={rungs:JSON.parse(JSON.stringify(SF.ladderOf(P).rungs))};changed(true);return}
-  if(t.id==='ladReset'){delete P.ladder;changed(true);return}
-  if(t.id==='ladEdit'){var bx=$('#ladBox');bx.hidden=!bx.hidden;if(!bx.hidden)$('#ladText').value=JSON.stringify(P.ladder,null,1);return}
-  if(t.id==='ladApply'){
-    try{var lo=parseLoose($('#ladText').value);if(!lo||!Array.isArray(lo.rungs))throw new Error('"rungs" ontbreekt');P.ladder=lo;changed(true);toast('Laddercode toegepast')}
-    catch(err){toast('Kan de laddercode niet lezen: '+err.message)}
-    return}
-  if(t.dataset.hwdel){ensureHw();var L=hwList(t.dataset.hwdel);if(L.length>1)L.splice(+t.dataset.i,1);changed(true);return}
-  if(t.dataset.hwadd){ensureHw();var L2=hwList(t.dataset.hwadd),isStop=t.dataset.hwadd==='stops';L2.push((isStop?'STOP ':'START ')+(L2.length+1));changed(true);return}
-  if(t.dataset.del){
-    var arr=t.dataset.del,i=+t.dataset.i;P[arr].splice(i,1);
-    if(arr==='motors'){
-      P.outputs.forEach(function(o){var p=String(o.load).split(':');if(p[0]==='M'){if(+p[1]===i)o.load='LAMP';else if(+p[1]>i)o.load='M:'+(+p[1]-1)+':'+p[2]}});
-      P.inputs.forEach(function(x){if(x.kind==='THERMAL'){if((x.m||0)===i)x.m=0;else if(x.m>i)x.m--}});
-    }
-    changed(true);return;
-  }
-  if(t.id==='addMotor'){if(P.motors.length>=3){toast('Er passen maximaal 3 motoren op het voedingsblad.');return}P.motors.push({name:'MOTOR '+(P.motors.length+1),type:'DOL',breaker:'C16A',thermal:true});changed(true)}
-  if(t.id==='addIn'){var used=P.inputs.map(function(x){return x.n}),n=1;while(used.indexOf(n)>=0&&n<8)n++;P.inputs.push({n:n,fn:'',kind:'NO'});changed(true)}
-  if(t.id==='addOut'){var u=P.outputs.map(function(x){return x.n}),q=1;while(u.indexOf(q)>=0&&q<4)q++;P.outputs.push({n:q,fn:'',load:'LAMP'});changed(true)}
-});
-$('#tabs').addEventListener('click',function(e){var b=e.target.closest('[data-go]');if(b){var el=document.getElementById('sheet'+b.dataset.go);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}});
-
-/* header actions */
-var exArm=0;
-$('#exBtn').onclick=function(e){
-  if(Date.now()-exArm>3000){exArm=Date.now();e.target.textContent='Huidig project vervangen?';setTimeout(function(){e.target.textContent='Voorbeeld laden'},3000);return}
-  e.target.textContent='Voorbeeld laden';P=SF.example();changed(true);toast('Voorbeeld geladen: motorschakeling logo');
-};
-$('#saveBtn').onclick=function(){
-  var txt=JSON.stringify(P,null,1);
-  navigator.clipboard.writeText(txt).then(function(){toast('Project gekopieerd. Plak het in een tekstbestand om het te bewaren.')}).catch(function(){showText(txt)});
-};
-function showText(txt){
-  var host=document.createElement('section');host.className='card';
-  host.innerHTML='<h2>Projecttekst</h2><textarea id="projText" rows="8" spellcheck="false" style="font-family:var(--f-mono);font-size:11px"></textarea><div style="display:flex;gap:8px"><button class="btn primary small" type="button" id="projLoad">Dit project laden</button><button class="btn small" type="button" id="projClose">Sluiten</button></div>';
-  var old=document.getElementById('projCard');if(old)old.remove();
-  host.id='projCard';$('#form').prepend(host);
-  $('#projText').value=txt||'';$('#projText').focus();$('#projText').select();
-  $('#projClose').onclick=function(){host.remove()};
-  $('#projLoad').onclick=function(){
-    try{var o=parseLoose($('#projText').value);if(!o||!Array.isArray(o.motors)||!Array.isArray(o.inputs)||!Array.isArray(o.outputs))throw new Error('motoren, ingangen of uitgangen ontbreken');P=normalizeProject(o).project;host.remove();changed(true);toast('Project geladen')}
-    catch(err){toast('Deze tekst is geen LAZY Electrical-project ('+err.message+').')}
-  };
-}
-$('#openBtn').onclick=function(){showText('')};
-
-$('#pdfBtn').onclick=function(){
-  var framed=true;try{framed=window.self!==window.top}catch(e){}
-  if(!window.jspdf){toast('De PDF-bibliotheek is niet geladen. Controleer je internetverbinding en herlaad de pagina.');return}
-  var doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  (P.drawing&&P.drawing.sheets?P.drawing.sheets:last).forEach(function(sh,i){
-    if(i)doc.addPage('a4','landscape');
-    doc.setDrawColor(0);doc.setTextColor(0);doc.setLineCap('round');
-    sh.prims.forEach(function(p){
-      if(p.t==='l'||p.t==='pl'){doc.setLineWidth(p.w);doc.setLineDashPattern(p.dash?[1.2,0.8]:[],0)}
-      if(p.t==='l')doc.line(p.x1,p.y1,p.x2,p.y2);
-      else if(p.t==='pl'){var d=[];for(var k=1;k<p.pts.length;k++)d.push([p.pts[k][0]-p.pts[k-1][0],p.pts[k][1]-p.pts[k-1][1]]);doc.lines(d,p.pts[0][0],p.pts[0][1],[1,1],'S',!!p.close)}
-      else if(p.t==='r'||p.t==='c'){
-        doc.setLineDashPattern([],0);doc.setLineWidth(p.lw);
-        var st='S';if(p.fill){doc.setFillColor(p.fill==='k'?0:255);st='FD'}
-        if(p.t==='r')doc.rect(p.x,p.y,p.w,p.h,st);else doc.circle(p.x,p.y,p.r,st);
-      } else if(p.t==='tx'){
-        doc.setFont('helvetica',p.bold?'bold':'normal');doc.setFontSize(p.size*72/25.4);
-        doc.text(p.s,p.x,p.y,p.rot?{angle:p.rot}:undefined);
-      }
-    });
-  });
-  var name=(P.name||'schema').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')||'schema';
-  if(DL){
-    DL.save({filename:name+'.pdf',data:doc.output('blob')}).then(function(r){if(r&&r.status==='saved')toast('PDF opgeslagen.')}).catch(function(e){
-      if(e&&e.code==='declined')return;
-      if(e&&e.code==='rate_limited'){toast('Er staat al een downloadvenster open.');return}
-      toast('Opslaan lukt hier niet. Open het LAZY Electrical-bestand (.html) op je computer en klik daar op PDF downloaden.');
-    });
-    return;
-  }
-  doc.save(name+'.pdf');
-  if(framed)toast('Verscheen er geen bestand? Open het LAZY Electrical-bestand (.html) op je computer en klik daar op PDF downloaden.');
-};
-/*__EDITOR__*/
-function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(function(){t.classList.remove('show')},3800)}
-
-
-/* ---------- AI-assistent ---------- */
-var DL=null, SAMPLE=null, aiCtl=null, undoP=null, aiBlocked=false, lastQ='';
-var SCHEMA_TXT=[
-'Je vult een project in voor LAZY Electrical, een programma dat elektrische schema\'s tekent voor schakelkasten met een Siemens LOGO! (of zonder PLC, met contactoren).',
-'Antwoord met ALLEEN één JSON-object met exact deze velden:',
-'{',
-' "name": string (projectnaam), "tek": string, "date": string, "nr": string, "functie": string, "locatie": string, "school": string,',
-' "plc": "0BA5" | "0BA6" | "24CE" | "24RCE" | "1224RCE" | "none"   ("none" = geen PLC, bedrade contactorschakeling),',
-' "order": string (bestelnummer van de LOGO!; "" bij "none"),',
-' "estop": boolean (noodstop aanwezig),',
-' "mainBreaker": string (bv. "C20A"), "b24": string (bv. "C6A"), "b230": string (bv. "C10A"),',
-' "motors": [ { "name": string in HOOFDLETTERS, "type": "DOL" | "REV" | "YD", "breaker": string, "thermal": boolean } ]   (max 3; DOL = direct, REV = omkeer links/rechts, YD = ster-driehoek),',
-' "inputs": [ { "n": 1-8, "fn": functie in HOOFDLETTERS (bv. "START", "STOP", "NOODSTOP", "THERMISCH CONTACT"), "kind": "NO" | "NC" | "ESTOP" | "THERMAL", "m": motorindex (alleen bij THERMAL) } ],',
-' "outputs": [ { "n": 1-4, "fn": functie in kleine letters (bv. "motor", "lamp noodstop", "zoemer"), "load": "LAMP" | "BUZZER" | "M:<motorindex>:<rol>" } ],',
-' "ladder": zie hieronder (ALLEEN bij plc "none"),',
-' "_uitleg": string (2-4 korte zinnen in het Nederlands: wat je gemaakt hebt en eventuele beperkingen)',
-'}',
-'Rollen per motortype: DOL -> "run"; REV -> "right" en "left"; YD -> "main", "star" en "delta". Elke rol van elke motor krijgt precies één uitgang.',
-'Regels met PLC: maximaal 8 ingangen (I1-I8) en 4 uitgangen (Q1-Q4), geen nummer dubbel. Stopknoppen zijn NC, startknoppen NO. Is estop true, voeg dan een ingang met kind "ESTOP" toe. Geef per motor met thermisch relais een ingang "THERMAL" met de juiste m. Gebruik vrije uitgangen voor signaallampen of een zoemer als dat past.',
-'ZONDER PLC ("none") schrijf je ALTIJD "ladder": de volledige stuurkring (230 V tussen 1L1 en 1N) als lijst van sporten. Dit geeft je volledige controle over het ontwerp:',
-' "ladder": { "rungs": [ sport, sport, ... ] }   een sport = lijst elementen in SERIE van 1L1 naar 1N.',
-' Element = contact: { "t": "NO"|"NC", "kind": "push"|"estop"|"limit"|"switch"|"sensor"|"aux"|"timer"|"thermal", "dev": id, "name": tekst, "m": motorindex }',
-'   push = drukknop, estop = noodstop, limit = eindeloopschakelaar, switch = schakelaar, sensor = sensorcontact: "dev" = eigen id (bv. "S1", "B1"); hetzelfde dev-id meerdere keren gebruiken = hetzelfde toestel (bv. NO-contact én NC-vergrendelcontact van dezelfde knop). "name" bij het eerste gebruik.',
-'   aux = hulpcontact van een spoel ("dev" = id van die spoel), timer = contact van een tijdrelais ("dev" = id van het tijdrelais), thermal = contact van het thermisch relais van motor "m" (NC = 95-96, NO = 97-98).',
-' Element = parallel: { "par": [ [tak], [tak], ... ] }   minstens 2 takken, elke tak is weer een serielijst. Bv. startknop parallel met houdcontact: {"par":[[{"t":"NO","kind":"push","dev":"S2","name":"START"}],[{"t":"NO","kind":"aux","dev":"KM1"}]]}.',
-'   Eindigen ALLE takken op een uitgang, dan is het een splitsing (gemeenschappelijke stopketen die meerdere spoelen voedt); die moet dan het laatste element van de sport zijn.',
-' Element = uitgang (altijd het LAATSTE element van een sport of tak): { "coil": id, "type": "contactor"|"relay"|"timer_on"|"timer_off", "name": tekst, "time": "5 s" (alleen tijdrelais), "drives": "<motorindex>:<rol>" (alleen contactoren die een motor schakelen) } of { "lamp": id, "name": tekst } of { "buzzer": id, "name": tekst }.',
-' Elke rol van elke motor (zie motors) moet precies één contactor met "drives" krijgen. timer_on = opkomend vertraagd, timer_off = afvallend vertraagd.',
-' Ontwerpregels: noodstop en stopknoppen NC in serie vooraan; startknoppen NO parallel met een houdcontact (aux NO van de eigen contactor); bij omkeer vergrendelen met NC hulpcontacten (en NC-contacten van de andere startknoppen); ster-driehoek: netcontactor + tijdrelais, ster via NC-tijdcontact, driehoek via NO-tijdcontact, ster en driehoek onderling vergrendeld; thermisch contact NC in de keten van zijn motor; signaallampen als eigen sporten (bv. aux NO -> lamp).',
-' Een blad is ongeveer 9 parallelle takken breed en ongeveer 8 contacten hoog; het programma verdeelt sporten zelf over bladen.',
-'Regels zonder PLC ("none"): maximaal 3 motoren (DOL, REV of YD); inputs en outputs zijn lege lijsten; laat "hw" weg (de ladder vervangt het). Vraagt de gebruiker bv. "start/stop vanaf twee plaatsen", teken dan twee stopknoppen NC in serie en twee startknoppen NO parallel met het houdcontact.',
-'Met PLC is elke drukknop een eigen ingang: twee startknoppen = twee ingangen (bv. I1 "START 1" en I2 "START 2", kind "NO"), twee stopknoppen = twee NC-ingangen.',
-'Houd titelhoekvelden (name, tek, date, nr, functie, locatie, school) van het huidige project, tenzij de gebruiker er uitdrukkelijk om vraagt; gebruik de vraag van de gebruiker nooit als projectnaam (een leeg veld mag je invullen met een korte naam in kleine letters, bv. "start stop twee plaatsen"). Pas het huidige project aan als de vraag een wijziging is; maak een nieuw project als de vraag een nieuwe schakeling beschrijft.',
-'Past iets niet binnen deze regels (bv. meer dan 4 uitgangen), maak dan de beste versie die wel past en zeg dat in _uitleg.',
-'',
-'BELANGRIJKE ONTWERPREGEL: beveiligingen (noodstop, stopknoppen, thermische contacten) staan ÉÉN keer, vooraan, in een gemeenschappelijke keten. Moeten meerdere spoelen gevoed worden (bv. rechts en links), splits dan NA die keten met een parallelle groep waarvan elke tak op een spoel eindigt. Herhaal de beveiliging nooit per spoel.',
-'',
-'VOORBEELD (correct) — vraag: "motor naar twee kanten laten draaien vanaf 2 plaatsen, zonder LOGO, met noodstop" →',
-'"ladder": {"rungs": [',
-' [ {"t":"NC","kind":"estop","dev":"S1","name":"NOODSTOP"}, {"t":"NC","kind":"push","dev":"S2","name":"STOP 1"}, {"t":"NC","kind":"push","dev":"S3","name":"STOP 2"}, {"t":"NC","kind":"thermal","m":0},',
-'   {"par": [',
-'     [ {"par":[[{"t":"NO","kind":"push","dev":"S4","name":"RECHTS 1"}],[{"t":"NO","kind":"push","dev":"S5","name":"RECHTS 2"}],[{"t":"NO","kind":"aux","dev":"KM1"}]]},',
-'       {"t":"NC","kind":"push","dev":"S6"}, {"t":"NC","kind":"push","dev":"S7"}, {"t":"NC","kind":"aux","dev":"KM2"},',
-'       {"coil":"KM1","type":"contactor","name":"MOTOR","drives":"0:right"} ],',
-'     [ {"par":[[{"t":"NO","kind":"push","dev":"S6","name":"LINKS 1"}],[{"t":"NO","kind":"push","dev":"S7","name":"LINKS 2"}],[{"t":"NO","kind":"aux","dev":"KM2"}]]},',
-'       {"t":"NC","kind":"push","dev":"S4"}, {"t":"NC","kind":"push","dev":"S5"}, {"t":"NC","kind":"aux","dev":"KM1"},',
-'       {"coil":"KM2","type":"contactor","name":"MOTOR","drives":"0:left"} ]',
-'   ]} ],',
-' [ {"t":"NO","kind":"aux","dev":"KM1"}, {"lamp":"H1","name":"lamp rechts"} ],',
-' [ {"t":"NO","kind":"aux","dev":"KM2"}, {"lamp":"H2","name":"lamp links"} ]',
-']}  met "motors": [{"name":"MOTOR","type":"REV","breaker":"C16A","thermal":true}].'
-].join('\n');
-var RULES_KEY='lazyelectrical.rules', EX_KEY='lazyelectrical.examples';
-function lsGet(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}
-function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-/* rules + examples: general, not tied to a schematic. Kept per account in the artifact database (same on every device), with a browser copy as fallback */
-var TEACH=(function(){
-  var r=lsGet(RULES_KEY,[]),ex=lsGet(EX_KEY,[]);
-  if(typeof r==='string')r=r.split('\n');
-  return {rules:(Array.isArray(r)?r:[]).map(function(x){return String(x).trim()}).filter(Boolean),examples:Array.isArray(ex)?ex:[]};
-})();
-var TDB=null,tWrite=Promise.resolve(),tSynced=false;
-function saveTeach(){
-  lsSet(RULES_KEY,TEACH.rules);lsSet(EX_KEY,TEACH.examples);
-  if(TDB){var body={rules:TEACH.rules.slice(),examples:TEACH.examples.slice()};tWrite=tWrite.then(function(){return TDB.set(body)}).catch(function(e){if(e&&e.code==='quota_exceeded')toast('De opslag voor regels is vol. Verwijder een voorbeeld.')});}
-  renderTeach();
-}
-function teachText(){
-  var t='',rules=TEACH.rules.join('\n'),ex=[];
-  if(rules)t+='\n\nEXTRA ONTWERPREGELS VAN DE GEBRUIKER (altijd volgen, ze gaan voor op de standaardregels):\n'+rules;
-  if(Array.isArray(ex)&&ex.length){
-    t+='\n\nGOEDGEKEURDE VOORBEELDEN VAN DE GEBRUIKER (volg dezelfde aanpak en stijl bij gelijkaardige vragen):';
-    ex.forEach(function(e,i){t+='\n'+(i+1)+'. Vraag: "'+e.q+'"\n   Goedgekeurd antwoord: '+JSON.stringify(e.p)});
-  }
-  return t;
-}
-var AI_ERR={not_granted:'Je hebt de pagina geen toestemming gegeven om Claude te gebruiken.',sampling_disabled:'Claude is niet beschikbaar voor dit account.',rate_limited:'Te veel aanvragen, of je gebruikslimiet is bereikt. Probeer het later opnieuw.',session_expired:'Je bent afgemeld. Meld je opnieuw aan bij Claude.',refused:'Claude weigerde deze vraag. Formuleer ze anders.',invalid_json:'Claude gaf drie keer een antwoord dat het programma niet kon lezen. Druk nog eens op Genereer; meestal lukt het dan wel.',empty_completion:'Er kwam geen antwoord. Probeer het korter of anders te formuleren.',prompt_too_large:'De vraag is te lang.'};
-function normalizeProject(o){
-  if(o&&typeof o==='object'&&o.project&&typeof o.project==='object'&&!o.motors)o=Object.assign({},o.project,{_uitleg:o._uitleg||o.project._uitleg});
-  if(!o||typeof o!=='object'||Array.isArray(o))throw {code:'invalid_json'};
-  if(!Array.isArray(o.motors))o.motors=JSON.parse(JSON.stringify(P.motors||[]));
-  if(!Array.isArray(o.inputs))o.inputs=o.plc==='none'?[]:JSON.parse(JSON.stringify(P.inputs||[]));
-  if(!Array.isArray(o.outputs))o.outputs=o.plc==='none'?[]:JSON.parse(JSON.stringify(P.outputs||[]));
-  if(o.plc==null)o.plc=P.plc;
-  if(o.estop==null)o.estop=P.estop;
-  var uitleg=String(o._uitleg||'');delete o._uitleg;
-  ['name','tek','date','nr','functie','locatie','school'].forEach(function(k){if(P[k])o[k]=P[k];else if(o[k]==null)o[k]=''});
-  if(o.hw&&typeof o.hw==='object'){
-    var hs=function(a){return (Array.isArray(a)?a:[]).map(function(x){return String(x||'').trim()}).filter(Boolean)};
-    var st={};Object.keys(o.hw.starts||{}).forEach(function(r){if(['run','right','left'].indexOf(r)>=0)st[r]=hs(o.hw.starts[r])});
-    o.hw={stops:hs(o.hw.stops),starts:st,lamps:o.hw.lamps!==false};
-  } else delete o.hw;
-  if(o.plc==='none'&&o.ladder&&typeof o.ladder==='object'&&Array.isArray(o.ladder.rungs)&&o.ladder.rungs.length)o.ladder={rungs:o.ladder.rungs};
-  else delete o.ladder;
-  if(!SF.PLC[o.plc])o.plc='0BA5';
-  if(o.order==null)o.order=SF.PLC[o.plc].order;
-  o.estop=!!o.estop;['mainBreaker','b24','b230'].forEach(function(k){if(!o[k])o[k]=P[k]||''});
-  o.motors=o.motors.slice(0,3).map(function(m){return {name:String(m.name||'MOTOR'),type:SF.ROLES[m.type]?m.type:'DOL',breaker:String(m.breaker||'C16A'),thermal:m.thermal!==false}});
-  o.inputs=o.inputs.map(function(i){var r={n:Math.max(1,Math.min(8,+i.n||1)),fn:String(i.fn||''),kind:KIND[i.kind]?i.kind:'NO'};if(r.kind==='THERMAL')r.m=Math.max(0,+i.m||0);return r});
-  o.outputs=o.outputs.map(function(x){return {n:Math.max(1,Math.min(4,+x.n||1)),fn:String(x.fn||''),load:String(x.load||'LAMP')}});
-  return {project:o,uitleg:uitleg};
-}
-function repairJson(t){
-  var out='',inStr=false,esc2=false;
-  for(var i=0;i<t.length;i++){
-    var c=t[i];
-    if(inStr){out+=c;if(esc2)esc2=false;else if(c==='\\')esc2=true;else if(c==='"')inStr=false;continue}
-    if(c==='"'){inStr=true;out+=c;continue}
-    if(c==='/'&&t[i+1]==='/'){while(i<t.length&&t[i]!=='\n')i++;continue}
-    if(c==='/'&&t[i+1]==='*'){i+=2;while(i<t.length&&!(t[i]==='*'&&t[i+1]==='/'))i++;i++;continue}
-    out+=c;
-  }
-  return out.replace(/,(\s*[}\]])/g,'$1');
-}
-function parseLoose(txt){
-  txt=String(txt||'').trim().replace(/^```[a-zA-Z]*\s*/,'').replace(/```\s*$/,'');
-  try{return JSON.parse(txt)}catch(e){}
-  var a=txt.indexOf('{'),b=txt.lastIndexOf('}');
-  if(a>=0&&b>a){
-    var core=txt.slice(a,b+1);
-    try{return JSON.parse(core)}catch(e){}
-    return JSON.parse(repairJson(core));
-  }
-  throw new Error('geen JSON gevonden');
-}
-function hardErrors(o){
-  try{
-    if(o.plc==='none')return SF.checkLadder(o,SF.ladderOf(o)).errors;
-    return SF.validate(o).filter(function(x){return /twee keer|basismodule|bestaat niet|geen uitgang/.test(x)});
-  }catch(e){return ['Het programma kon dit project niet lezen: '+e.message]}
-}
-function applyProject(o,st,errs){
-  var r=normalizeProject(o);undoP=P;P=r.project;changed(true);
-  $('#aiUndo').hidden=false;
-  st.className='aiStatus';st.textContent=(r.uitleg||'Klaar. Controleer de bladen hiernaast.')+(errs&&errs.length?'\n\nNog na te kijken: '+errs.join(' '):'');
-}
-function aiUI(){
-  var b=$('#aiBody');
-  b.innerHTML='<div class="f"><label for="aiText">Beschrijf je schakeling of wat er moet veranderen</label><textarea id="aiText"></textarea></div><div class="aiRow"><button class="btn primary" type="button" id="aiGo">Genereer</button><button class="btn" type="button" id="aiStop" hidden>Stoppen</button><button class="btn" type="button" id="aiUndo" hidden>Ongedaan maken</button></div><div class="aiStatus" id="aiStatus" role="status"></div><div id="aiManual" hidden></div>';
-  $('#aiGo').onclick=aiRun;
-  $('#aiStop').onclick=function(){if(aiCtl)aiCtl.abort()};
-  $('#aiUndo').onclick=function(){if(!undoP)return;P=undoP;undoP=null;$('#aiUndo').hidden=true;$('#aiStatus').textContent='Vorige versie teruggezet.';changed(true)};
-  $('#aiText').addEventListener('keydown',function(e){if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();aiRun()}});
-}
-function renderTeach(){
-  var b=$('#teachBody');if(!b)return;
-  var R=TEACH.rules,E=TEACH.examples;
-  b.innerHTML='<div class="rows" id="ruleList">'+(R.length?R.map(function(r,i){return '<div class="row" style="grid-template-columns:22px minmax(0,1fr) 28px"><span class="hint">'+(i+1)+'.</span><span style="font-size:13px">'+esc(r)+'</span><button class="x" type="button" data-rdel="'+i+'" aria-label="Regel verwijderen">×</button></div>'}).join(''):'<p class="hint">Nog geen regels.</p>')+'</div>'+
-    '<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><input type="text" id="ruleNew" aria-label="Nieuwe regel"><button class="btn small" type="button" id="ruleAdd">Toevoegen</button></div>';
-  function add(){var v=$('#ruleNew').value.trim();if(!v)return;TEACH.rules.push(v);saveTeach();var n=$('#ruleNew');if(n)n.focus()}
-  $('#ruleAdd').onclick=add;
-  $('#ruleNew').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();add()}});
-  b.querySelectorAll('[data-rdel]').forEach(function(x){x.onclick=function(){TEACH.rules.splice(+x.dataset.rdel,1);saveTeach()}});
-
-}
-function aiMode(){
-  var h=$('#aiHint');if(!h)return;
-  h.textContent=SAMPLE?'Gebruikt je eigen Claude-account. De eerste keer vraagt claude.ai om toestemming.'
-    :'Geen directe verbinding met Claude hier (dat lukt alleen in de gepubliceerde versie op claude.ai). Genereer maakt dan een opdracht die je in een Claude-gesprek plakt.';
-}
-function aiManual(prompt){
-  var m=$('#aiManual'),st=$('#aiStatus');
-  m.hidden=false;
-  m.innerHTML='<div class="f"><label for="aiPrompt">1. Kopieer deze opdracht en plak ze in een gesprek met Claude</label><textarea id="aiPrompt" rows="4" readonly style="font-family:var(--f-mono);font-size:11px"></textarea></div><div class="aiRow"><button class="btn" type="button" id="aiCopy">Opdracht kopiëren</button></div><div class="f"><label for="aiAnswer">2. Plak hier het antwoord van Claude</label><textarea id="aiAnswer" rows="4" style="font-family:var(--f-mono);font-size:11px"></textarea></div><div class="aiRow"><button class="btn primary" type="button" id="aiLoad">Antwoord laden</button></div>';
-  $('#aiPrompt').value=prompt;
-  $('#aiCopy').onclick=function(){
-    navigator.clipboard.writeText(prompt).then(function(){toast('Opdracht gekopieerd. Plak ze in Claude.')}).catch(function(){$('#aiPrompt').focus();$('#aiPrompt').select();toast('Geselecteerd. Druk op Ctrl+C om te kopiëren.')});
-  };
-  $('#aiLoad').onclick=function(){
-    try{var ao=parseLoose($('#aiAnswer').value);var ce=hardErrors(normalizeProject(JSON.parse(JSON.stringify(ao))).project);applyProject(ao,st,ce);m.hidden=true;m.innerHTML=''}
-    catch(e){st.className='aiStatus err';st.textContent='Dat antwoord kon niet geladen worden. Plak het volledige antwoord van Claude (het JSON-blok).'}
-  };
-  st.className='aiStatus';st.textContent='';
-}
-function aiRun(){
-  var q=$('#aiText').value.trim(),st=$('#aiStatus');
-  if(!q){st.className='aiStatus err';st.textContent='Typ eerst wat je wilt laten tekenen.';$('#aiText').focus();return}
-  var prompt=SCHEMA_TXT+teachText()+'\n\nHUIDIG PROJECT:\n'+JSON.stringify(P,function(k,v){return k==='drawing'?undefined:v})+'\n\nVRAAG VAN DE GEBRUIKER:\n'+q;
-  lastQ=q;
-  if(!SAMPLE||aiBlocked){aiManual(prompt);return}
-  aiCtl=new AbortController();
-  $('#aiGo').disabled=true;$('#aiStop').hidden=false;st.className='aiStatus';st.textContent='Bezig met nadenken…';
-  var sig=aiCtl.signal;
-  function ask(pr,attempt){
-    return SAMPLE(pr+'\n\nAntwoord met ALLEEN het JSON-object, zonder uitleg ervoor of erna en zonder commentaar in de JSON.',{signal:sig,cache:false,onText:function(){st.textContent=attempt===1?'Schema wordt opgesteld…':'Schema wordt verbeterd…'}}).then(function(res){
-      var o,cand;
-      try{o=parseLoose(res.text);cand=normalizeProject(JSON.parse(JSON.stringify(o))).project}
-      catch(e){
-        if(attempt<3){
-          st.textContent='Het antwoord was niet leesbaar; Claude probeert het opnieuw…';
-          return ask(pr+'\n\nJE VORIGE ANTWOORD WAS GEEN GELDIGE JSON'+(res.truncated?' (het was te lang en werd afgebroken; schrijf compacter)':'')+'. Geef nu alleen het volledige, geldige JSON-object.',attempt+1);
-        }
-        throw {code:'invalid_json',truncated:res.truncated};
-      }
-      var errs=hardErrors(cand);
-      if(errs.length&&attempt<3&&pr.indexOf('HET PROGRAMMA VOND DEZE FOUTEN')<0){
-        st.textContent='Het programma vond '+errs.length+' fout'+(errs.length>1?'en':'')+'; Claude verbetert het schema…';
-        return ask(pr+'\n\nJE VORIGE ANTWOORD:\n'+JSON.stringify(o)+'\n\nHET PROGRAMMA VOND DEZE FOUTEN IN JE ANTWOORD:\n- '+errs.join('\n- ')+'\n\nCorrigeer ze en antwoord opnieuw met het volledige JSON-object.',attempt+1);
-      }
-      return {o:o,errs:errs};
-    });
-  }
-  ask(prompt,1).then(function(res){
-    applyProject(res.o,st,res.errs);
-  }).catch(function(e){
-    var c=e&&e.code;
-    if(c==='cancelled'){st.className='aiStatus';st.textContent='Gestopt.';return}
-    st.className='aiStatus err';st.textContent=AI_ERR[c]||'Er ging iets mis. Probeer het opnieuw.';
-    if(c==='not_granted'||c==='sampling_disabled'){aiBlocked=true;st.textContent+=' Druk opnieuw op Genereer om het via een gesprek met Claude te doen.'}
-  }).then(function(){
-    $('#aiGo').disabled=false;
-    $('#aiStop').hidden=true;aiCtl=null;
-  });
-}
-aiUI();aiMode();renderTeach();
-if(typeof window.claude!=='undefined'&&window.claude&&window.claude.use){
-  window.claude.use('sample').then(function(s){SAMPLE=s;aiMode()}).catch(aiMode);
-  window.claude.use('downloads').then(function(d){DL=d}).catch(function(){});
-  window.claude.use('db').then(function(db){
-    if(!db)return;
-    var ref=db.doc('teach/ai');
-    ref.onSnapshot(function(snap){
-      if(snap.exists){var d=snap.data()||{};TEACH={rules:Array.isArray(d.rules)?d.rules.slice():[],examples:Array.isArray(d.examples)?d.examples.slice():[]};lsSet(RULES_KEY,TEACH.rules);lsSet(EX_KEY,TEACH.examples);if(!TDB)TDB=ref;renderTeach();}
-      else if(!tSynced){TDB=ref;if(TEACH.rules.length||TEACH.examples.length)saveTeach();else renderTeach();}
-      tSynced=true;
-    },function(){TDB=null;renderTeach()});
-  }).catch(function(){});
-}
-
-/* collapsible cards: click a card title to fold it; remembered in this browser */
-var FOLD_KEY='lazyelectrical.folded';
-function cardName(h){var c=h.cloneNode(true);c.querySelectorAll('button').forEach(function(b){b.remove()});return c.textContent.trim()}
-function applyFolds(){
-  var f=lsGet(FOLD_KEY,[]);
-  document.querySelectorAll('.form .card > h2').forEach(function(h){
-    var n=cardName(h),on=f.indexOf(n)>=0;
-    h.parentNode.classList.toggle('fold',on);h.tabIndex=0;h.setAttribute('role','button');h.setAttribute('aria-expanded',String(!on));
-  });
-}
-function toggleFold(h){
-  var f=lsGet(FOLD_KEY,[]),n=cardName(h),i=f.indexOf(n);
-  if(i>=0)f.splice(i,1);else f.push(n);
-  lsSet(FOLD_KEY,f);applyFolds();
-}
-$('.form').addEventListener('click',function(e){var h=e.target.closest('.card > h2');if(h&&!e.target.closest('button'))toggleFold(h)});
-$('.form').addEventListener('keydown',function(e){var h=e.target.closest&&e.target.closest('.card > h2');if(h&&e.target===h&&(e.key==='Enter'||e.key===' ')){e.preventDefault();toggleFold(h)}});
-renderForm();renderSheets();applyFolds();
-})();
+/*__APP__*/
 </script>

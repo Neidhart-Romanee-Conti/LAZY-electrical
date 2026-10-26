@@ -1,8 +1,8 @@
 {
   "name": "lazy-electrical",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Vibe-coded electrical CAD for wiring diagrams, control panels and complete schematic sets, with a powerful AI assistant.",
+  "description": "Electrical CAD for wiring diagrams, control panels and complete schematic sets, with an AI assistant that designs and checks schematics.",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
