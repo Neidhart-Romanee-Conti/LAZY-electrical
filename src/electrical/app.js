@@ -1016,7 +1016,8 @@
      AI assistant panel
      ===================================================================== */
   let SAMPLE = null, aiCtl = null, aiBlocked = false;
-  const AI_ERR = { not_granted: 'Je hebt de pagina geen toestemming gegeven om Claude te gebruiken.', sampling_disabled: 'Claude is niet beschikbaar voor dit account.', rate_limited: 'Te veel aanvragen of je gebruikslimiet is bereikt. Probeer het later opnieuw.', session_expired: 'Je bent afgemeld. Meld je opnieuw aan bij Claude.', refused: 'Claude weigerde deze vraag. Formuleer ze anders.', invalid_json: 'Claude gaf geen bruikbaar antwoord.', bad_key: 'De API-sleutel werkt niet. Controleer hem bij Instellingen.', network: 'Geen verbinding met de Claude-API.', overloaded: 'De Claude-API is even overbelast. Probeer het zo opnieuw.' };
+  const AI_ERR = { not_granted: 'Je hebt de pagina geen toestemming gegeven om Claude te gebruiken.', sampling_disabled: 'Claude is niet beschikbaar voor dit account.', rate_limited: 'Te veel aanvragen of je gebruikslimiet is bereikt. Probeer het later opnieuw.', session_expired: 'Je bent afgemeld. Meld je opnieuw aan bij Claude.', refused: 'Claude weigerde deze vraag. Formuleer ze anders.', invalid_json: 'Claude kreeg het schema niet rond. Probeer de vraag eenvoudiger of in kleinere stappen.', bad_key: 'De API-sleutel werkt niet. Controleer hem bij Instellingen.', network: 'Geen verbinding met de Claude-API.', overloaded: 'De Claude-API is even overbelast. Probeer het zo opnieuw.',
+    upstream_error: 'Er was een storing bij Claude. Probeer het zo opnieuw.', empty_completion: 'Claude gaf geen antwoord. Probeer de vraag eenvoudiger te stellen.', prompt_too_large: 'Het project is te groot om in één keer naar Claude te sturen.', capability_disabled: 'Claude is hier niet beschikbaar.', not_declared: 'Claude is hier niet beschikbaar.' };
   function apiKey() { return S.apiKey || lsGet('lazyelectrical.v2.apikey', ''); }
   function aiMode() { return SAMPLE && !aiBlocked ? 'claude.ai' : apiKey() ? 'key' : 'manual'; }
   function aiSettingsHtml() {
@@ -1048,7 +1049,11 @@
   /* the three ways to reach Claude */
   async function askClaude(prompt, signal, onProgress) {
     const mode = aiMode();
-    if (mode === 'claude.ai') { const r = await SAMPLE(prompt, { signal, cache: false, onText: (t) => onProgress && onProgress(t.length) }); return r.text; }
+    if (mode === 'claude.ai') {
+      /* designing a schematic is hard reasoning: ask the most capable tier; onText gets {text, delta} with the WHOLE answer in text */
+      const r = await SAMPLE(prompt, { signal, cache: false, modelTier: 'complex', onText: (u) => onProgress && onProgress(u.text.length) });
+      return r.text;
+    }
     if (mode === 'key') return askApi(prompt, signal, onProgress);
     throw Object.assign(new Error('manual'), { code: 'manual' });
   }
