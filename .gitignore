@@ -1,0 +1,15 @@
+# build output
+dist/
+node_modules/
+
+# private symbol libraries: never commit (derived from licensed software)
+symbols/local/*
+!symbols/local/.gitkeep
+*.ses
+
+# editors / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/
+__pycache__/
