@@ -23,6 +23,7 @@
     grid: '<path d="M4 4h.01M12 4h.01M20 4h.01M4 12h.01M12 12h.01M20 12h.01M4 20h.01M12 20h.01M20 20h.01" stroke-width="2.8"/>',
     zoomin: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5M8 10.5h5M10.5 8v5"/>', zoomout: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5M8 10.5h5"/>',
     zoomfit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+    hand: '<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10.5V4a1.5 1.5 0 0 1 3 0v6.5M14 10.5V5.5a1.5 1.5 0 0 1 3 0V11M17 11V8.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.6-2.2L4.6 15a1.5 1.5 0 0 1 2.3-1.9L8 14.5"/>',
     pottop: '<path d="M3 6h18M5 4L3 6l2 2M19 4l2 2-2 2"/><path d="M8 6v13M16 6v13" stroke-dasharray="2 2"/>',
     potbot: '<path d="M3 18h18M5 16l-2 2 2 2M19 16l2 2-2 2"/><path d="M8 18V5M16 18V5" stroke-dasharray="2 2"/>',
     potcur: '<path d="M3 12h18M5 10l-2 2 2 2M19 10l2 2-2 2"/><path d="M12 4v4M12 16v4"/>',
@@ -166,7 +167,7 @@
       ['Controle', [['check', 'Controleren', 'check', true]]]
     ] },
     { id: 'draw', label: 'Tekenen', groups: [
-      ['Selecteren', [['t_select', 'Selecteren', 'select', true]]],
+      ['Selecteren', [['t_select', 'Selecteren', 'select', true], ['t_pan', 'Hand (H)', 'hand', true]]],
       ['Elementen', [['t_text', 'Tekst', 'text', true], ['col', [['t_line', 'Lijn', 'line'], ['t_rect', 'Rechthoek', 'rect'], ['t_circle', 'Cirkel', 'circle']]]]],
       ['Structuur', [['t_flframe', 'Functie/plaats-kader', 'frame', true]]],
       ['Raster', [['grid', 'Raster tonen', 'grid', true]]]
@@ -190,7 +191,7 @@
       ['Toestellen', [['pick', 'Picklijst', 'parts', true], ['col', [['rotate', 'Toestel draaien', 'rotate'], ['heat', 'Warmte­berekening', 'info']]]]]
     ] },
     { id: 'view', label: 'Beeld', groups: [
-      ['Zoom', [['zoomfit', 'Passend', 'zoomfit', true], ['col', [['zoomin', 'Inzoomen (+)', 'zoomin'], ['zoomout', 'Uitzoomen (−)', 'zoomout']]]]],
+      ['Zoom', [['t_pan', 'Hand (H)', 'hand', true], ['zoomfit', 'Passend', 'zoomfit', true], ['col', [['zoomin', 'Inzoomen (+)', 'zoomin'], ['zoomout', 'Uitzoomen (−)', 'zoomout']]]]],
       ['Tonen', [['grid', 'Raster', 'grid', true], ['wirenos', 'Draadnummers', 'wirenum', true]]],
       ['Panelen', [['col', [['panelL', 'Werkruimte', 'panelL'], ['panelR', 'Symbolen en AI', 'panelR'], ['panelB', 'Controle', 'panelB']]]]]
     ] },
@@ -199,7 +200,7 @@
       ['Snel', [['col', [['ai_new', 'Nieuw ontwerp…', 'new'], ['ai_check', 'Schema laten nakijken', 'check'], ['ai_explain', 'Schema uitleggen', 'help']]]]]
     ] }
   ];
-  const TOOLS = { t_select: 'select', t_text: 'text', t_line: 'line', t_rect: 'rect', t_circle: 'circle', t_flframe: 'flframe', t_potcur: 'potcur', t_wire1: 'wire', t_wire2: 'wire', t_wire3: 'wire', t_wire4: 'wire', t_wire5: 'wire', t_ref: 'place', t_term: 'place', t_cable: 'cable', t_encl: 'encl', t_rail: 'rail', t_duct: 'duct' };
+  const TOOLS = { t_select: 'select', t_pan: 'pan', t_text: 'text', t_line: 'line', t_rect: 'rect', t_circle: 'circle', t_flframe: 'flframe', t_potcur: 'potcur', t_wire1: 'wire', t_wire2: 'wire', t_wire3: 'wire', t_wire4: 'wire', t_wire5: 'wire', t_ref: 'place', t_term: 'place', t_cable: 'cable', t_encl: 'encl', t_rail: 'rail', t_duct: 'duct' };
   function pressed(id) {
     if (id === 'grid') return S.prefs.grid;
     if (id === 'wirenos') return S.prefs.wireNos;
@@ -398,7 +399,7 @@
     const cv = $('#cv'), pg = curPage(); if (!cv || !pg) return;
     const T = tpl(), g = T.g, vb = viewOf(pg);
     cv.setAttribute('viewBox', [vb.x, vb.y, vb.w, vb.h].join(' '));
-    cv.setAttribute('class', S.tool.name === 'select' ? 't-select' : 't-draw');
+    cv.setAttribute('class', S.tool.name === 'select' ? 't-select' : S.tool.name === 'pan' ? 't-pan' : 't-draw');
     const prims = R.renderPage(P(), pg, analysis(), { wireNumbers: S.prefs.wireNos });
     const W = T.W * g, H = T.H * g;
     /* highlight: lines get a coloured stroke, text only a coloured fill (a stroke on text makes it a blob) */
@@ -430,6 +431,7 @@
     renderRibbon(); renderSymbols(); renderCanvas(); renderProps(); renderStatus();
   }
   const HINT = {
+    pan: 'Sleep om het blad te verschuiven. Esc stopt.',
     select: 'Klik om te selecteren, sleep om te verplaatsen (Ctrl = kopiëren), sleep op een lege plek voor een selectievenster. Dubbelklik = eigenschappen.',
     place: 'Klik om te plaatsen (R = draaien). Rechtsklik of Esc stopt.', wire: 'Klik het beginpunt, klik hoekpunten; het eindpunt op een aansluiting of dubbelklik eindigt. Esc stopt.',
     potcur: 'Klik op de hoogte waar de potentiaal moet komen.', cable: 'Klik het begin en het einde van de kabellijn, schuin over de draden.', text: 'Klik waar de tekst moet komen.',
@@ -476,7 +478,7 @@
       const a = S.drag.a, b = S.drag.b, cross = b[0] < a[0];
       h += '<rect x="' + f(Math.min(a[0], b[0])) + '" y="' + f(Math.min(a[1], b[1])) + '" width="' + f(Math.abs(b[0] - a[0])) + '" height="' + f(Math.abs(b[1] - a[1])) + '" fill="' + (cross ? 'rgba(43,138,62,.08)' : 'rgba(25,113,194,.08)') + '" stroke="' + (cross ? '#2b8a3e' : '#1971c2') + '" stroke-width="0.3"' + (cross ? ' stroke-dasharray="1.5 1"' : '') + '/>';
     }
-    if (c && t.name !== 'select') h += '<path d="M' + f(c[0] - 0.6) + ' ' + f(c[1]) + 'h' + f(1.2) + 'M' + f(c[0]) + ' ' + f(c[1] - 0.6) + 'v' + f(1.2) + '" stroke="#495057" stroke-width="0.2"/>';
+    if (c && t.name !== 'select' && t.name !== 'pan') h += '<path d="M' + f(c[0] - 0.6) + ' ' + f(c[1]) + 'h' + f(1.2) + 'M' + f(c[0]) + ' ' + f(c[1] - 0.6) + 'v' + f(1.2) + '" stroke="#495057" stroke-width="0.2"/>';
     ov.innerHTML = h;
   }
 
@@ -488,7 +490,7 @@
     cv.addEventListener('pointerdown', (e) => {
       const pg = curPage(); if (!pg) return;
       cv.setPointerCapture(e.pointerId);
-      if (e.button === 1 || (e.button === 0 && spaceDown)) { const v = viewOf(pg); pan = { x: e.clientX, y: e.clientY, vx: v.x, vy: v.y, k: v.w / cv.clientWidth }; e.preventDefault(); return; }
+      if (e.button === 1 || (e.button === 0 && (spaceDown || S.tool.name === 'pan'))) { const v = viewOf(pg); pan = { x: e.clientX, y: e.clientY, vx: v.x, vy: v.y, k: v.w / cv.clientWidth }; cv.classList.add('panning'); e.preventDefault(); return; }
       if (e.button !== 0) return;
       const t = S.tool, u = toU(e);
       if (t.name === 'select') {
@@ -523,7 +525,7 @@
       renderStatus();
     });
     cv.addEventListener('pointerup', (e) => {
-      if (pan) { pan = null; return; }
+      if (pan) { pan = null; cv.classList.remove('panning'); return; }
       const pg = curPage(), d = S.drag; S.drag = null; if (!pg || !d) return;
       if (d.kind === 'move' && d.moved && (d.d[0] || d.d[1])) {
         if (e.ctrlKey || e.altKey) exec('Kopiëren', (Q) => { const out = M.pasteItems(Q, pg.id, M.copyItems(Q, pg.id, d.ids), d.d[0], d.d[1]); S.sel = new Set(out.map((i) => i.id)); });
@@ -555,6 +557,7 @@
       const id = hit.dataset.id; if (!S.sel.has(id)) { S.sel = new Set([id]); renderCanvas(); renderProps(); }
       menu(e.clientX, e.clientY, itemMenu(id));
     });
+    cv.addEventListener('pointercancel', () => { if (pan) { pan = null; cv.classList.remove('panning'); } });
     cv.addEventListener('pointerleave', () => { S.cursor = null; setHover(null); drawOverlay(); });
     cv.addEventListener('pointerover', (e) => { const h = S.tool.name === 'select' && !S.drag && e.target.closest && e.target.closest('.hit g[data-id]'); setHover(h ? h.dataset.id : null); });
     void lastClick;
@@ -954,7 +957,7 @@
       '<label for="st_w">Draadnummers</label><select id="st_w" data-set="wireNo">' + [['seq', 'Doorlopend'], ['pagecol', 'Blad.kolom'], ['none', 'Geen']].map((o) => '<option value="' + o[0] + '"' + (St.wireNo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>' +
       '<label for="st_p">Aansluitnummers tonen</label><select id="st_p" data-set="showPinNo"><option value="1"' + (St.showPinNo !== false ? ' selected' : '') + '>Ja</option><option value="0"' + (St.showPinNo === false ? ' selected' : '') + '>Nee</option></select></div>' +
       '<h2>AI-assistent</h2>' + aiSettingsHtml();
-    else if (sec === 'help') body = '<h1>Help</h1><h2>Sneltoetsen</h2><div class="form" style="grid-template-columns:200px 1fr">' + [['Ctrl+Z / Ctrl+Y', 'Ongedaan maken / opnieuw'], ['Ctrl+C / X / V', 'Kopiëren / knippen / plakken'], ['Delete', 'Verwijderen'], ['R', 'Roteren (ook tijdens plaatsen)'], ['Esc of rechtsklik', 'Gereedschap stoppen'], ['Ctrl+1 / Ctrl+3', '1 draad / 3 draden'], ['F11 / F12', 'Potentiaal boven / onder'], ['Page Up / Page Down', 'Vorig / volgend blad'], ['+ / −, muiswiel', 'Zoomen'], ['Spatie + slepen, middelste muisknop', 'Verschuiven'], ['Ctrl + slepen', 'Kopie slepen'], ['Ctrl+S', 'Opslaan']].map((r) => '<b>' + r[0] + '</b><span>' + r[1] + '</span>').join('') + '</div>' +
+    else if (sec === 'help') body = '<h1>Help</h1><h2>Sneltoetsen</h2><div class="form" style="grid-template-columns:200px 1fr">' + [['Ctrl+Z / Ctrl+Y', 'Ongedaan maken / opnieuw'], ['Ctrl+C / X / V', 'Kopiëren / knippen / plakken'], ['Delete', 'Verwijderen'], ['R', 'Roteren (ook tijdens plaatsen)'], ['Esc of rechtsklik', 'Gereedschap stoppen'], ['Ctrl+1 / Ctrl+3', '1 draad / 3 draden'], ['F11 / F12', 'Potentiaal boven / onder'], ['Page Up / Page Down', 'Vorig / volgend blad'], ['+ / −, muiswiel', 'Zoomen'], ['H, spatie + slepen, middelste muisknop', 'Verschuiven (hand)'], ['Ctrl + slepen', 'Kopie slepen'], ['Ctrl+S', 'Opslaan']].map((r) => '<b>' + r[0] + '</b><span>' + r[1] + '</span>').join('') + '</div>' +
       '<h2>Hoe werkt het?</h2><p class="note">Symbolen met dezelfde tag zijn één toestel: de spoel K1 en de contacten K1 horen samen. Contactnummers, kruisverwijzingen, het contactbeeld onder de spoelen, draadnummers, klemmenplannen en lijsten maakt het programma zelf, ook na wijzigingen met de hand. Draden verbinden alleen op aansluitpunten, op andere draden (T-verbinding, met een stip) of op potentialen. Alles ligt op het raster.</p>';
     $('#back').innerHTML = '<nav><button type="button" class="close" data-backclose="1">' + ic('prev') + 'Terug</button>' + nav.map((n) => '<button type="button" data-back="' + n[0] + '" aria-selected="' + (sec === n[0]) + '">' + ic(n[2]) + n[1] + '</button>').join('') + '</nav><section>' + body + '</section>';
   }
@@ -1215,6 +1218,7 @@
       else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); run('del'); }
       else if (k === 'Escape') { const t = S.tool; if ((t.name === 'wire' || t.name === 'line') && t.pts) { t.pts = null; drawOverlay(); } else if (t.a) { t.a = null; drawOverlay(); } else if (t.name !== 'select') setTool({ name: 'select' }); else { S.sel.clear(); renderCanvas(); renderProps(); } }
       else if (k === 'r' || k === 'R') run('rotate');
+      else if ((k === 'h' || k === 'H') && !ctrl) run('t_pan');
       else if (k === 'PageUp') { e.preventDefault(); stepPage(-1); }
       else if (k === 'PageDown') { e.preventDefault(); stepPage(1); }
       else if (k === '+' || k === '=') zoomBy(1 / 1.25);
