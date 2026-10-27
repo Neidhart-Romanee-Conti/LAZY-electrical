@@ -1,73 +1,67 @@
 # LAZY Electrical
 
-Free, open-source electrical CAD for wiring diagrams and control panels, with a built-in AI assistant that can design a schematic for you, check it and fix it.
+Gratis programma om elektrische schema's en schakelkasten te tekenen, met een ingebouwde AI-assistent die schema's voor je ontwerpt, controleert en verbetert.
 
-**[Open LAZY Electrical in your browser →](https://neidhart-romanee-conti.github.io/LAZY-electrical/)**
+## Installeren
 
-Nothing to install, no account needed. It runs entirely in your browser, and your projects stay on your computer.
+### Optie 1: online gebruiken (aanbevolen)
 
-> The interface is in Dutch (Nederlands). An English interface is planned.
+Open **[LAZY Electrical](https://neidhart-romanee-conti.github.io/LAZY-electrical/)** in je browser (Chrome, Edge, Firefox of Safari).
 
-**Status: early, but usable.** It already handles complete control-panel projects. Some features are still missing; see the [roadmap](docs/ROADMAP.md).
+Je hoeft niets te installeren en geen account aan te maken. Het programma draait volledig in je browser en je projecten blijven op je eigen computer.
 
-## Getting started
+### Optie 2: offline op je computer
 
-1. **Open the app** using the link above.
-2. **Look at an example:** open **Bestand → Voorbeelden** (File → Examples) and pick one, for example a reversing motor or a star-delta starter.
-3. **Start your own:** open **Bestand → Nieuw project** (File → New project). Click a symbol in the **Symbolen** panel on the right to place it, and draw wires with **Ctrl+1** (one wire) or **Ctrl+3** (three wires).
-4. **Or let the AI design it:** open the **AI-assistent** tab on the right and describe your circuit, e.g. *"a pump that starts with a push button and stops with a float switch, with emergency stop and signal lamps"*.
-5. **Save and print:** **Ctrl+S** saves the project as a `.lazy.json` file. The PDF button exports the whole set.
+1. Open de link hierboven.
+2. Kies in het menu van je browser **Pagina opslaan als…** en bewaar de pagina als één bestand (kies **Webpagina, alleen HTML** als je die keuze krijgt).
+3. Dubbelklik voortaan op dat bestand om het programma te openen, ook zonder internet.
 
-All keyboard shortcuts are listed under **Bestand → Help**.
+Voor de PDF-export is wel een internetverbinding nodig.
 
-## Features
+### Optie 3: zelf bouwen
 
-- **Schematics:** a library of standard symbols (contacts, coils, timers, push buttons, breakers, overloads, motors, lamps, terminals, PLC I/O, power supplies …). Everything snaps to the grid, and wires follow when you move a symbol.
-- **Automatic numbering:** device tags, contact numbers, wire numbers, terminal numbers and PLC addresses. Coils get a contact cross, and contacts get cross-references to their coil. All of it updates after every edit.
-- **Lists:** bill of materials, component list, terminal plan, cable and core lists, wire list, PLC I/O list and contact list. They're printed with the set and can be exported as CSV.
-- **Checks:** finds short circuits, contacts without a coil, duplicate tags, unconnected pins, loose wires and more.
-- **Cabinet layout:** a mounting plate to scale, with DIN rails and cable ducts.
-- **Parts database:** a starter set of generic parts, plus your own parts or a supplier catalogue imported from CSV.
-- **Output:** a PDF of the whole set (A3 or A4), SVG of a single sheet, CSV lists.
-
-## The AI assistant
-
-- **Design:** describe a circuit and it builds the complete project: supply, control circuit, PLC inputs and outputs, and power circuit.
-- **Change:** ask it to change an existing project. Besides redesigning, it can edit the drawing itself: merge and renumber terminal strips, rename or renumber devices, swap a contact, move, delete or add symbols and wires, and change sheets.
-- **Ask:** ask it questions about your schematic.
-- **Every result is checked:** the program checks the AI's work and sends any errors back to it to fix. You can undo every AI change.
-- **Your own rules:** add design rules of your own (for example *"always use 24 V DC control voltage"*), and the AI follows them in every project.
-
-You can connect the assistant in three ways:
-
-- **On claude.ai:** it uses your own Claude account.
-- **With your own API key** from [console.anthropic.com](https://console.anthropic.com): enter it under **Bestand → Instellingen** (File → Settings). The key is only stored in your browser.
-- **Without either:** the app gives you a prompt to paste into any Claude chat, and you paste the answer back.
-
-## Running it locally
-
-You need [Node.js](https://nodejs.org) 20 or newer. There are no other dependencies.
+Je hebt [Node.js](https://nodejs.org) 20 of nieuwer nodig.
 
 ```bash
 git clone https://github.com/Neidhart-Romanee-Conti/LAZY-electrical.git
 cd LAZY-electrical
-npm test          # run the automatic tests
-npm run build     # writes dist/index.html
+npm run build
 ```
 
-Open `dist/index.html` in your browser. The whole program is that one HTML file, so you can also copy it and use it offline.
+Open daarna `dist/index.html` in je browser. Met `npm test` voer je de automatische tests uit.
 
-## Contributing
+## Aan de slag
 
-Bug reports, ideas and pull requests are welcome. Please open an issue first for bigger changes.
+1. **Voorbeeld bekijken:** **Bestand → Voorbeelden**.
+2. **Zelf tekenen:** **Bestand → Nieuw project**. Klik rechts op een symbool om het te plaatsen en teken draden met **Ctrl+1** (één draad) of **Ctrl+3** (drie draden). Met de **hand (H)** schuif je over het blad.
+3. **Laten ontwerpen:** open het tabblad **AI-assistent** en beschrijf je schakeling, bijvoorbeeld *"een pomp die start met een drukknop en stopt met een vlotter, met noodstop en signaallampen"*.
+4. **Opslaan en afdrukken:** **Ctrl+S** bewaart het project als `.lazy.json`-bestand. De knop **PDF** maakt een PDF van alle bladen.
 
-```
-src/electrical/   the program: symbols, model, render, parts, auto (layout engine), lists, cabinet,
-                  checks, standard (standard sheet set), examples, ai, app (interface), ui.html
-tests/            automatic tests (node --test)
-docs/ROADMAP.md   planned features
-```
+Alle sneltoetsen staan onder **Bestand → Help**.
 
-## License
+## Wat kan het?
 
-[GPL-3.0](LICENSE). Siemens and LOGO! are trademarks of Siemens AG. This project is not affiliated with Siemens or with any commercial CAD vendor.
+- **Schema's tekenen** met een bibliotheek van standaardsymbolen. Alles ligt op het raster en draden bewegen mee als je een symbool verplaatst.
+- **Automatische nummering** van toestellen, contacten, draden, klemmen en PLC-adressen, met kruisverwijzingen.
+- **Lijsten:** stuklijst, klemmenplan, kabel- en aderlijst, draadlijst, PLC-lijst en contactenlijst, ook als CSV.
+- **Controle** op kortsluiting, contacten zonder spoel, dubbele tags, losse draden en meer.
+- **Kastindeling** op schaal, met DIN-rails en kabelgoten.
+- **Artikelen:** een basisset, aan te vullen met je eigen artikelen (CSV-import).
+- **Uitvoer:** PDF (A3 of A4), SVG en CSV.
+
+## AI-assistent
+
+- **Ontwerpen:** beschrijf een schakeling en de assistent maakt het hele project.
+- **Wijzigen:** vraag een aanpassing, zoals klemmen samenvoegen, een contact vervangen of een draad toevoegen.
+- **Vragen stellen** over je schema.
+- **Altijd gecontroleerd:** het programma controleert elk antwoord en laat fouten automatisch verbeteren. Elke wijziging kun je ongedaan maken.
+- **Eigen regels:** voeg ontwerpregels toe die de assistent bij elk project volgt.
+
+Je kunt de assistent op twee manieren gebruiken:
+
+- **Met een API-sleutel:** vul je sleutel in bij **Bestand → Instellingen**. De sleutel blijft in je eigen browser.
+- **Via een AI-chat:** zonder sleutel maakt het programma een opdracht die je in een AI-chat naar keuze plakt. Het antwoord plak je daarna terug in het programma.
+
+## Licentie
+
+[GPL-3.0](LICENSE). Siemens en LOGO! zijn handelsmerken van Siemens AG. Dit project is niet verbonden met Siemens of met een commerciële CAD-leverancier.
