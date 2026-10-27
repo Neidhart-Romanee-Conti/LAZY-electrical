@@ -405,7 +405,7 @@
     const hl = (id, col) => '#cv .page g[data-id="' + id + '"] :not(text){stroke:' + col + '}#cv .page g[data-id="' + id + '"] text{fill:' + col + '}';
     const selCss = [...S.sel].map((id) => hl(id, '#e8590c')).join('') + (S.hover && !S.sel.has(S.hover) ? hl(S.hover, '#1971c2') : '');
     /* grid: a dot on every grid point; the tile is offset so the dot is not cut off at the tile edge */
-    const grid = S.prefs.grid ? '<defs><pattern id="gp" x="' + (-g / 2) + '" y="' + (-g / 2) + '" width="' + g + '" height="' + g + '" patternUnits="userSpaceOnUse"><circle cx="' + g / 2 + '" cy="' + g / 2 + '" r="' + (g * 0.075) + '" fill="#6c757d"/></pattern></defs>' +
+    const grid = S.prefs.grid ? '<defs><pattern id="gp" x="' + (-g / 2) + '" y="' + (-g / 2) + '" width="' + g + '" height="' + g + '" patternUnits="userSpaceOnUse"><circle cx="' + g / 2 + '" cy="' + g / 2 + '" r="' + (g * 0.06) + '" fill="#6c757d"/></pattern></defs>' +
       '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#gp)" pointer-events="none"/>' : '';
     cv.innerHTML = '<style id="selcss">' + selCss + '</style><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff" stroke="#5c636a" stroke-width="0.4"/>' + grid +
       '<g class="page" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" font-family="Helvetica, Arial, sans-serif">' + R.body(prims) + '</g>' +
