@@ -404,7 +404,11 @@
     /* highlight: lines get a coloured stroke, text only a coloured fill (a stroke on text makes it a blob) */
     const hl = (id, col) => '#cv .page g[data-id="' + id + '"] :not(text){stroke:' + col + '}#cv .page g[data-id="' + id + '"] text{fill:' + col + '}';
     const selCss = [...S.sel].map((id) => hl(id, '#e8590c')).join('') + (S.hover && !S.sel.has(S.hover) ? hl(S.hover, '#1971c2') : '');
-    const grid = S.prefs.grid ? '<defs><pattern id="gp" width="' + g + '" height="' + g + '" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="' + (g * 0.045) + '" fill="#b8bec5"/></pattern></defs><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#gp)" pointer-events="none"/>' : '';
+    /* grid: a dot on every grid point and a light line every 5 units; the tiles are offset so dots and lines are not cut off at the tile edge */
+    const G5 = g * 5;
+    const grid = S.prefs.grid ? '<defs><pattern id="gp" x="' + (-g / 2) + '" y="' + (-g / 2) + '" width="' + g + '" height="' + g + '" patternUnits="userSpaceOnUse"><circle cx="' + g / 2 + '" cy="' + g / 2 + '" r="' + (g * 0.075) + '" fill="#6c757d"/></pattern>' +
+      '<pattern id="gp5" x="-1" y="-1" width="' + G5 + '" height="' + G5 + '" patternUnits="userSpaceOnUse"><path d="M1 1H' + (G5 + 1) + 'M1 1V' + (G5 + 1) + '" stroke="#c3c9cf" stroke-width="0.3" fill="none"/></pattern></defs>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#gp5)" pointer-events="none"/><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="url(#gp)" pointer-events="none"/>' : '';
     cv.innerHTML = '<style id="selcss">' + selCss + '</style><rect x="0" y="0" width="' + W + '" height="' + H + '" fill="#fff" stroke="#5c636a" stroke-width="0.4"/>' + grid +
       '<g class="page" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" font-family="Helvetica, Arial, sans-serif">' + R.body(prims) + '</g>' +
       '<g class="hit">' + hitMarkup(pg, g) + '</g><g id="ov" pointer-events="none"></g>';
