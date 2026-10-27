@@ -90,7 +90,7 @@ This list comes from the published feature matrices of commercial electrical CAD
 - ✅ Change an existing project (rebuild a sheet, add sheets, change devices) as one undoable step
 - ✅ Teachable with your own design rules
 - ✅ Answer questions about the schematic; review it for mistakes; explain how it works
-- ⬜ Small hand-level edits (move one contact, add one wire) through the same model operations
+- ✅ Small hand-level edits (merge terminal strips, swap a contact, move a symbol, add a wire) through the same model operations; on a standard project they are kept and replayed after a rebuild
 - ⬜ Suggest parts and breaker sizes from the parts database
 - ⬜ Read a scanned or photographed old schematic and turn it into an editable project
 - ⬜ Generate a project from a spreadsheet (I/O list or motor list)

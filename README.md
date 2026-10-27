@@ -33,7 +33,7 @@ All keyboard shortcuts are listed under **Bestand → Help**.
 ## The AI assistant
 
 - **Design:** describe a circuit and it builds the complete project: supply, control circuit, PLC inputs and outputs, and power circuit.
-- **Change:** ask it to change an existing project.
+- **Change:** ask it to change an existing project. Besides redesigning, it can edit the drawing itself: merge and renumber terminal strips, rename or renumber devices, swap a contact, move, delete or add symbols and wires, and change sheets.
 - **Ask:** ask it questions about your schematic.
 - **Every result is checked:** the program checks the AI's work and sends any errors back to it to fix. You can undo every AI change.
 - **Your own rules:** add design rules of your own (for example *"always use 24 V DC control voltage"*), and the AI follows them in every project.

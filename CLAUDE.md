@@ -28,12 +28,13 @@
   - `analyze()` computes everything derived, never stored: nets, devices (same function + location + tag = one device), automatic contact numbers, cross-references, junction dots, wire numbers, cable cores.
 - **`render.js`** (`LE.render`): page → drawing primitives in mm (frame, title block, labels, contact cross under coils, potential references, wire numbers) → SVG. The PDF export uses the same primitives.
 - **`parts.js`** (`LE.parts`): parts database. A generic starter set without invented part numbers, plus the project's own parts (CSV import). It gives contact capacity, sizes and heat loss.
-- **`auto.js`** (`LE.auto`): the layout engine. A page description (potentials + current paths with series/parallel chains, multi-pole paths, motor-starter macros `dol`/`rev`/`yd`) becomes symbols and wires on the grid. The AI and the examples use this format; the AI never places coordinates.
+- **`auto.js`** (`LE.auto`): the layout engine. A page description (potentials + current paths with series/parallel chains, multi-pole paths, motor-starter macros `dol`/`rev`/`yd`) becomes symbols and wires on the grid. The AI and the examples use this format for new designs; small or exact changes go through `ops.js`.
 - **`lists.js`** (`LE.lists`): BOM, components, terminal plan, cables, cores, wires, PLC I/O, contacts, contents. These feed the database tables, the printed graphical lists and CSV.
 - **`cabinet.js`** (`LE.cabinet`): 2D cabinet layout to scale. It covers the pick list of schematic devices, DIN rails and ducts (lengths go into the BOM), snapping to rails and heat loss.
 - **`checks.js`** (`LE.checks`): electrical rule check with Dutch messages: short circuits, contacts without a coil, duplicate tags, unconnected pins, loose wires, too many contacts for the part, and more.
+- **`ops.js`** (`LE.ops`): edit operations on an existing drawing (set/rename/delete devices, swap a symbol, merge and renumber terminal strips, page changes, place/move/rotate symbols, wires, wire numbers). They address things by tag, terminal (`X1:3`) or page + grid point, never by internal id, so a standard project can store them in `edits` and replay them after a rebuild. `describe()` lists the drawing with coordinates for the AI.
 - **`examples.js`**: example projects in the page-description format. They are also the layout tests and the AI's worked example.
-- **`ai.js`** (`LE.ai`): the prompt (format + symbol catalogue + design rules + current project), lenient JSON parsing, applying a reply (`project` or `ops`), and the loop. The loop asks Claude, applies and checks the answer, and sends errors back, for up to 3 rounds.
+- **`ai.js`** (`LE.ai`): the prompt (format + edit operations + symbol catalogue + design rules + current project with its drawing), lenient JSON parsing, applying a reply (`standard`, `ops` or `project`), and the loop. The loop asks Claude, applies and checks the answer, and sends errors back, for up to 3 rounds.
 - **`app.js` + `ui.html`**: the workspace UI. It has the ribbon, the tree, tabbed sheets with the drawing tools, properties, the symbol browser, database tables, checks, the File backstage, PDF/CSV export and the AI panel.
 - **AI connection:** on claude.ai it uses the artifact `sample` capability (`window.claude.use('sample')`). Elsewhere it can use the user's own API key (a direct browser call with streaming), or fall back to copy-paste.
 
@@ -81,4 +82,4 @@
 - `npm run build` writes `dist/index.html` (one self-contained file).
 
 ## Next steps
-See `docs/ROADMAP.md`. Big open items: symbol editor, macros, DXF, revisions, and letting the AI make small hand-level edits through the same model operations.
+See `docs/ROADMAP.md`. Big open items: symbol editor, macros, DXF, revisions.

@@ -284,6 +284,55 @@ test('ai: a standard answer builds the standard sheet set and is shown back for 
   const r2 = LE.ai.apply(M.newProject(), { standard: bad });
   assert.ok(LE.ai.mustFix(r2).some((e) => /rol "left" heeft geen PLC-uitgang/.test(e)));
 });
+/* ---------- edit operations ---------- */
+const terms = (P) => P.pages.flatMap((pg) => pg.items.filter((i) => i.k === 'sym' && LE.symbols.get(i.s).role === 'terminal').map((i) => i.tag + ':' + i.no));
+test('ops: all terminals onto one strip, numbered on; kept when the standard project is rebuilt', () => {
+  const std = LE.examples.find((e) => e.id === 'std_rev').standard;
+  const P0 = LE.ai.apply(M.newProject(), { standard: std }).P;
+  const r = LE.ai.apply(P0, { ops: [{ op: 'mergeStrips', into: 'X1' }] });
+  assert.deepEqual(plain(LE.ai.mustFix(r)), []);
+  const want = Array.from({ length: 17 }, (_, i) => 'X1:' + (i + 1)).concat(['X1:PE']);
+  assert.deepEqual(plain(terms(r.P)), want);
+  assert.equal(r.P.standard.edits.length, 1);
+  /* a changed standard project without "edits" keeps the earlier edits */
+  const std2 = JSON.parse(JSON.stringify(std)); std2.inputs.push({ n: 6, desc: 'RESET', kind: 'NO' });
+  const r2 = LE.ai.apply(r.P, { standard: std2 });
+  assert.deepEqual(plain(LE.ai.mustFix(r2)), []);
+  assert.ok(terms(r2.P).every((t) => /^X1:/.test(t)) && terms(r2.P).includes('X1:19'));
+  /* the same result straight from the standard project */
+  const r3 = LE.ai.apply(M.newProject(), { standard: Object.assign({}, std, { terminalStrip: 'X1' }) });
+  assert.deepEqual(plain(LE.ai.mustFix(r3)), []);
+  assert.deepEqual(plain(terms(r3.P)), want);
+});
+test('ops: hand-level edits stay on the grid; a failed operation changes nothing', () => {
+  const P0 = LE.auto.buildProject(EX('dol')).P;
+  const before = terms(P0).length;
+  const r = LE.ai.apply(P0, { ops: [
+    { op: 'set', tag: 'S2', s: 'pb_nc' },
+    { op: 'renameDevice', from: 'S2', to: 'S9' },
+    { op: 'replaceText', find: 'POMP', replace: 'POMP 1' },
+    { op: 'renumberTerminals' }
+  ] });
+  assert.deepEqual(plain(r.errors), []);
+  assert.ok(r.P.pages.some((pg) => pg.items.some((i) => i.tag === 'S9' && i.s === 'pb_nc')));
+  assert.ok(r.P.pages.some((pg) => pg.edited), 'a page changed by hand is marked hand-edited');
+  assert.equal(terms(r.P).length, before);
+  /* insert a contact into an existing straight wire: the wire is cut at its pins */
+  const pg = r.P.pages.find((p) => p.items.some((i) => i.tag === 'S9'));
+  const w = pg.items.find((i) => i.k === 'wire' && i.pts.length === 2 && i.pts[0][0] === i.pts[1][0] && Math.abs(i.pts[1][1] - i.pts[0][1]) >= 6);
+  const x = w.pts[0][0], y = Math.min(w.pts[0][1], w.pts[1][1]) + 2;
+  const r2 = LE.ai.apply(r.P, { ops: [{ op: 'place', page: M.pageLabel(pg), s: 'no', at: [x, y], tag: 'K1' }] });
+  assert.deepEqual(plain(r2.errors), []);
+  assert.deepEqual(gridIssues(r2.P), []);
+  assert.deepEqual(overlaps(r2.P), []);
+  const A = M.analyze(r2.P), s = A.syms.find((q) => q.it.s === 'no' && q.it.x === x && q.it.y === y);
+  assert.notEqual(s.pins[0].net, s.pins[1].net, 'the new contact is in series, not shorted by the old wire');
+  const r3 = LE.ai.apply(r.P, { ops: [{ op: 'delete', tag: 'S9' }, { op: 'move', tag: 'NOPE', by: [1, 0] }] });
+  assert.ok(r3.errors.some((e) => /bewerking 2 \(move\): niets gevonden/.test(e)));
+  assert.ok(!r3.P.pages.some((p) => p.items.some((i) => i.tag === 'S9')), 'operations before the failed one still apply');
+  /* the prompt explains the operations and shows the drawing with coordinates */
+  assert.match(LE.ai.buildPrompt({ P: r.P, question: 'alle klemmen op X1' }), /"op": "mergeStrips"[\s\S]*TEKENING[\s\S]*BLAD \d+ "/);
+});
 test('ai: the loop feeds errors back and accepts the corrected answer', async () => {
   const bad = { project: { pages: [{ title: 'S', top: ['L1'], bottom: ['N'], paths: [{ from: 'L1', to: 'N', chain: [{ s: 'coil', tag: 'K1' }, { s: 'pb_no' }] }] }] } };
   const good = { project: { pages: [{ title: 'S', top: ['L1'], bottom: ['N'], paths: [{ from: 'L1', to: 'N', chain: [{ s: 'pb_no', tag: 'S1' }, { s: 'lamp', tag: 'P1' }] }] }] }, _uitleg: 'goed' };

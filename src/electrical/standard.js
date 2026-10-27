@@ -10,7 +10,9 @@
      "motors": [ { "name": "LOOPBAND", "type": "DOL" | "REV" | "YD", "breaker": "C10A", "power": "1,5 kW", "thermal": true } ],
      "inputs":  [ { "n": 1, "desc": "STOP", "kind": "NC" } ],                          (with a PLC)
      "outputs": [ { "n": 1, "desc": "MOTOR RECHTS", "load": "M:0:right" } ],            (with a PLC)
-     "ladder":  { "rungs": [ rung, ... ] } }                                          (without a PLC) */
+     "ladder":  { "rungs": [ rung, ... ] },                                          (without a PLC)
+     "terminalStrip": "X1",   (optional) every terminal on this one strip, numbered 1, 2, 3 … in sheet order
+     "edits": [ op, ... ] }   (optional) edit operations (ops.js) replayed on the generated drawing */
 var LE = typeof LE !== 'undefined' ? LE : {};
 LE.standard = (function () {
   'use strict';
@@ -27,17 +29,20 @@ LE.standard = (function () {
 
   /* internal tags of the devices the generator adds itself: high numbers, so they never collide with the tags in a
      hand-written ladder; the whole project is renumbered afterwards (per sheet and column, or consecutively) */
-  const T = {
+  const TAGS = {
     main: 'Q901', f24: 'F901', f230: 'F902', fMotor: (i) => 'F' + (910 + i), psu: 'T901', plc: 'K901', nood: 'K902', estop: 'S901',
     line: (i) => 'Q' + (920 + i * 5), role: (i, j) => 'Q' + (921 + i * 5 + j), ol: (i) => 'B' + (901 + i), motor: (i) => 'M' + (901 + i),
     xIn: 'X1', xField: 'X2', xMotor: (i) => 'X' + (3 + i), relay: (n) => 'K' + (950 + n), lamp: (n) => 'P' + (950 + n), input: (n, sensor) => (sensor ? 'B' : 'S') + (950 + n)
   };
   const potsOf = (i) => [(i + 2) + 'L1', (i + 2) + 'L2', (i + 2) + 'L3'];
-  const field = (el) => [{ s: 'term', tag: T.xField }, el, { s: 'term', tag: T.xField }];
 
   function build(sp) {
     const errs = [];
     if (!sp || typeof sp !== 'object') return { spec: null, errors: ['geen standaardproject-object'] };
+    /* one terminal strip for the whole project, or X1 supply / X2 field devices / X3… per motor */
+    const one = sp.terminalStrip ? String(sp.terminalStrip) : null;
+    const T = one ? Object.assign({}, TAGS, { xIn: one, xField: one, xMotor: () => one }) : TAGS;
+    const field = (el) => [{ s: 'term', tag: T.xField }, el, { s: 'term', tag: T.xField }];
     const plcKey = String(sp.plc || 'none'), plc = PLCS[plcKey] || null, hasPlc = plcKey !== 'none';
     if (hasPlc && !plc) errs.push('onbekende PLC "' + plcKey + '" (gebruik 0BA5, 24CE, 24RCE, 1224RCE of none)');
     const motors = (Array.isArray(sp.motors) ? sp.motors : []).map((m, i) => {
@@ -189,9 +194,15 @@ LE.standard = (function () {
   function buildProject(sp) {
     const r = build(sp);
     if (!r.spec) return { P: null, errors: r.errors };
-    const b = LE.auto.buildProject(r.spec);
-    if (b.P) { if (b.P.settings.tagMode === 'consecutive') LE.auto.retag(b.P, true); b.P.standard = JSON.parse(JSON.stringify(sp)); }
-    return { P: b.P, errors: r.errors.concat(b.errors) };
+    const b = LE.auto.buildProject(r.spec), errs = r.errors.concat(b.errors);
+    if (b.P) {
+      if (b.P.settings.tagMode === 'consecutive') LE.auto.retag(b.P, true);
+      if (sp.terminalStrip) LE.model.renumberTerminals(b.P, String(sp.terminalStrip));
+      b.P.standard = JSON.parse(JSON.stringify(sp));
+      /* the changes made afterwards (by the AI) are replayed, so a rebuilt project keeps them */
+      if (Array.isArray(sp.edits) && sp.edits.length) LE.ops.apply(b.P, sp.edits, errs, 'edits, bewerking ');
+    }
+    return { P: b.P, errors: errs };
   }
 
   return { build, buildProject, ROLES, PLCS };
