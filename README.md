@@ -1,77 +1,73 @@
 # LAZY Electrical
 
-Electrical CAD for wiring diagrams, control panels and complete schematic sets, with an AI assistant that can design a schematic by itself and check and fix it.
+Free, open-source electrical CAD for wiring diagrams and control panels, with a built-in AI assistant that can design a schematic for you, check it and fix it.
 
-> The program's interface is in Dutch (Nederlands). An English interface is on the roadmap.
+**[Open LAZY Electrical in your browser →](https://neidhart-romanee-conti.github.io/LAZY-electrical/)**
 
-**Status: early, but usable.** The core of a professional electrical CAD program works: components with pins, real wires and nets, automatic tags and cross-references, terminal plans, cable lists, BOM, checks, PDF sets and a cabinet layout. A lot is still missing; see [docs/ROADMAP.md](docs/ROADMAP.md).
+Nothing to install, no account needed. It runs entirely in your browser, and your projects stay on your computer.
 
-## What it does
+> The interface is in Dutch (Nederlands). An English interface is planned.
 
-**Workspace:** a ribbon with commands, a project tree (sheets, cabinet layouts, graphical lists, database lists), tabbed sheets, a symbol browser with search and favourites, a properties panel and a check panel.
+**Status: early, but usable.** It already handles complete control-panel projects. Some features are still missing; see the [roadmap](docs/ROADMAP.md).
 
-**Drawing:**
-- Place symbols (contacts, coils, timers, push buttons, emergency stop, breakers, motor protection, overloads, fuses, motors, lamps, terminals, PLC inputs and outputs, power supplies …).
-- Draw 1, 2, 3, 4 or 5 wires at once. A wire drawn through a symbol is cut at its pins automatically.
-- Potentials (L1, N, PE, +24V …) with cross-references between sheets.
-- Cables drawn across wires, with cores.
-- Continuation arrows.
-- Function/location frames (`=` and `+`, IEC 81346).
-- Text, lines, rectangles and circles.
-- Everything snaps to the grid. Moving a symbol drags its wires along, and undo/redo works for everything.
+## Getting started
 
-**Done automatically, also after hand edits:**
-- Device tags: consecutive, page + column, or page + number.
-- Contact numbers (13-14, 21-22 …).
-- The contact cross under each coil, and cross-references from contacts to their coil.
-- Wire numbers, terminal numbers and PLC addresses.
+1. **Open the app** using the link above.
+2. **Look at an example:** open **Bestand → Voorbeelden** (File → Examples) and pick one, for example a reversing motor or a star-delta starter.
+3. **Start your own:** open **Bestand → Nieuw project** (File → New project). Click a symbol in the **Symbolen** panel on the right to place it, and draw wires with **Ctrl+1** (one wire) or **Ctrl+3** (three wires).
+4. **Or let the AI design it:** open the **AI-assistent** tab on the right and describe your circuit, e.g. *"a pump that starts with a push button and stops with a float switch, with emergency stop and signal lamps"*.
+5. **Save and print:** **Ctrl+S** saves the project as a `.lazy.json` file. The PDF button exports the whole set.
 
-**Lists:** contents, BOM, component list, terminal plan (inner and outer side, bridges, cable cores), cable and core lists, wire list, PLC I/O list and contact list. They are printed with the set, shown as editable tables, and exported as CSV.
+All keyboard shortcuts are listed under **Bestand → Help**.
 
-**Checks:** short circuits, contacts without a coil, duplicate tags, terminal numbers and PLC addresses, unconnected pins, loose wires, more contacts than the chosen part has, and cables with too few cores.
+## Features
 
-**Cabinet layout:** a mounting plate to scale with DIN rails and cable ducts. Devices come from a pick list, are sized from the parts database and snap onto the rails. You also get a heat-loss total, and the rail and duct lengths go into the BOM.
+- **Schematics:** a library of standard symbols (contacts, coils, timers, push buttons, breakers, overloads, motors, lamps, terminals, PLC I/O, power supplies …). Everything snaps to the grid, and wires follow when you move a symbol.
+- **Automatic numbering:** device tags, contact numbers, wire numbers, terminal numbers and PLC addresses. Coils get a contact cross, and contacts get cross-references to their coil. All of it updates after every edit.
+- **Lists:** bill of materials, component list, terminal plan, cable and core lists, wire list, PLC I/O list and contact list. They're printed with the set and can be exported as CSV.
+- **Checks:** finds short circuits, contacts without a coil, duplicate tags, unconnected pins, loose wires and more.
+- **Cabinet layout:** a mounting plate to scale, with DIN rails and cable ducts.
+- **Parts database:** a starter set of generic parts, plus your own parts or a supplier catalogue imported from CSV.
+- **Output:** a PDF of the whole set (A3 or A4), SVG of a single sheet, CSV lists.
 
-**Parts database:** a generic starter set, your own parts, and CSV import of a supplier catalogue.
+## The AI assistant
 
-**AI assistant:**
-- Describe a circuit ("a pump that starts with a button and stops with a float switch, with emergency stop and lamps") and it designs the complete project: power circuit, control circuit, PLC.
-- Ask it to change an existing project, or ask questions about the schematic.
-- It doesn't draw coordinates. It writes circuit descriptions, which the program lays out on the grid, checks, and sends back with any errors until they are fixed (up to 3 rounds). Every AI change can be undone.
-- You can teach it your own design rules.
+- **Design:** describe a circuit and it builds the complete project: supply, control circuit, PLC inputs and outputs, and power circuit.
+- **Change:** ask it to change an existing project.
+- **Ask:** ask it questions about your schematic.
+- **Every result is checked:** the program checks the AI's work and sends any errors back to it to fix. You can undo every AI change.
+- **Your own rules:** add design rules of your own (for example *"always use 24 V DC control voltage"*), and the AI follows them in every project.
 
-**Output:** a PDF of the whole set (A3 or A4), an SVG of a single sheet, CSV lists, and the project file (`.lazy.json`).
+You can connect the assistant in three ways:
 
-## Try it
+- **On claude.ai:** it uses your own Claude account.
+- **With your own API key** from [console.anthropic.com](https://console.anthropic.com): enter it under **Bestand → Instellingen** (File → Settings). The key is only stored in your browser.
+- **Without either:** the app gives you a prompt to paste into any Claude chat, and you paste the answer back.
 
-Open the published version: **https://neidhart-romanee-conti.github.io/LAZY-electrical/**
-The repository's Pages setting must be set to "GitHub Actions" for this link to work.
-
-The AI assistant works three ways:
-- **On claude.ai** (when the page is opened there as an artifact): it uses your own Claude account.
-- **With your own API key** (File → Instellingen): the browser talks to the Claude API directly.
-- **Without either:** it gives you a prompt to paste into Claude, and you paste the answer back.
-
-## Build it yourself
+## Running it locally
 
 You need [Node.js](https://nodejs.org) 20 or newer. There are no other dependencies.
 
 ```bash
-npm test          # run the automatic checks
+git clone https://github.com/Neidhart-Romanee-Conti/LAZY-electrical.git
+cd LAZY-electrical
+npm test          # run the automatic tests
 npm run build     # writes dist/index.html
 ```
 
-Open `dist/index.html` in your browser. The whole program is one self-contained HTML file.
+Open `dist/index.html` in your browser. The whole program is that one HTML file, so you can also copy it and use it offline.
 
-## Project layout
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. Please open an issue first for bigger changes.
 
 ```
 src/electrical/   the program: symbols, model, render, parts, auto (layout engine), lists, cabinet,
-                  checks, examples, ai, app (user interface), ui.html (page and styles)
+                  checks, standard (standard sheet set), examples, ai, app (interface), ui.html
 tests/            automatic tests (node --test)
-docs/ROADMAP.md   where the project is going
+docs/ROADMAP.md   planned features
 ```
 
 ## License
 
-Code: [GPL-3.0](LICENSE). Siemens and LOGO! are trademarks of Siemens AG. This project is not affiliated with Siemens or with any commercial CAD vendor.
+[GPL-3.0](LICENSE). Siemens and LOGO! are trademarks of Siemens AG. This project is not affiliated with Siemens or with any commercial CAD vendor.
