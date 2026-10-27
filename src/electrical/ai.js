@@ -198,19 +198,19 @@ LE.ai = (function () {
     const base = buildPrompt(o);
     let prompt = base, last = null;
     for (let attempt = 1; attempt <= 3; attempt++) {
-      status(attempt === 1 ? 'Claude ontwerpt het schema…' : 'Claude verbetert het schema (ronde ' + attempt + ')…');
+      status(attempt === 1 ? 'De AI ontwerpt het schema…' : 'De AI verbetert het schema (ronde ' + attempt + ')…');
       const text = await o.ask(prompt + '\n\nAntwoord met ALLEEN het JSON-object.', { attempt });
       let reply, res;
       try { reply = parse(text); res = apply(o.P, reply); }
       catch (e) {
-        if (attempt === 3) throw Object.assign(new Error('Claude gaf geen bruikbaar antwoord: ' + e.message), { code: 'invalid_json' });
+        if (attempt === 3) throw Object.assign(new Error('De AI gaf geen bruikbaar antwoord: ' + e.message), { code: 'invalid_json' });
         prompt = base + '\n\nJE VORIGE ANTWOORD WAS NIET BRUIKBAAR (' + e.message + '). Geef nu alleen het volledige, geldige JSON-object.';
         continue;
       }
       last = res;
       const fix = mustFix(res);
       if (!fix.length || attempt === 3 || !res.changed) return Object.assign(res, { attempts: attempt, remaining: fix, warnings: shouldFix(res) });
-      status('Het programma vond ' + fix.length + ' fout' + (fix.length > 1 ? 'en' : '') + '; Claude verbetert…');
+      status('Het programma vond ' + fix.length + ' fout' + (fix.length > 1 ? 'en' : '') + '; de AI verbetert…');
       prompt = base + '\n\nJE VORIGE ANTWOORD:\n' + JSON.stringify(reply) + '\n\nHET PROGRAMMA VOND DEZE FOUTEN:\n- ' + fix.slice(0, 25).join('\n- ') +
         (shouldFix(res).length ? '\nWAARSCHUWINGEN (verbeter als het kan):\n- ' + shouldFix(res).slice(0, 10).join('\n- ') : '') + '\n\nCorrigeer ze en antwoord opnieuw met het volledige JSON-object (dezelfde vorm; bewerkingen worden opnieuw op het oorspronkelijke project uitgevoerd, geef dus de VOLLEDIGE lijst).';
     }

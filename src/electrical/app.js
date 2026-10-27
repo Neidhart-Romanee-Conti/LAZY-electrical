@@ -147,7 +147,7 @@
   let DL = null;
   function download(name, data, type) {
     const blob = data instanceof Blob ? data : new Blob([data], { type: type || 'application/octet-stream' });
-    if (DL) return DL.save({ filename: name, data: blob }).then((r) => { if (r && r.status === 'saved') toast(name + ' opgeslagen.'); }).catch((e) => { if (!(e && e.code === 'declined')) toast('Opslaan lukt hier niet. Open de LAZY Electrical-pagina buiten claude.ai.'); });
+    if (DL) return DL.save({ filename: name, data: blob }).then((r) => { if (r && r.status === 'saved') toast(name + ' opgeslagen.'); }).catch((e) => { if (!(e && e.code === 'declined')) toast('Opslaan lukt hier niet. Open LAZY Electrical rechtstreeks in je browser.'); });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
     return Promise.resolve();
@@ -1035,26 +1035,26 @@
      AI assistant panel
      ===================================================================== */
   let SAMPLE = null, aiCtl = null, aiBlocked = false;
-  const AI_ERR = { not_granted: 'Je hebt de pagina geen toestemming gegeven om Claude te gebruiken.', sampling_disabled: 'Claude is niet beschikbaar voor dit account.', rate_limited: 'Te veel aanvragen of je gebruikslimiet is bereikt. Probeer het later opnieuw.', session_expired: 'Je bent afgemeld. Meld je opnieuw aan bij Claude.', refused: 'Claude weigerde deze vraag. Formuleer ze anders.', invalid_json: 'Claude kreeg het schema niet rond. Probeer de vraag eenvoudiger of in kleinere stappen.', bad_key: 'De API-sleutel werkt niet. Controleer hem bij Instellingen.', network: 'Geen verbinding met de Claude-API.', overloaded: 'De Claude-API is even overbelast. Probeer het zo opnieuw.',
-    upstream_error: 'Er was een storing bij Claude. Probeer het zo opnieuw.', empty_completion: 'Claude gaf geen antwoord. Probeer de vraag eenvoudiger te stellen.', prompt_too_large: 'Het project is te groot om in één keer naar Claude te sturen.', capability_disabled: 'Claude is hier niet beschikbaar.', not_declared: 'Claude is hier niet beschikbaar.' };
+  const AI_ERR = { not_granted: 'Je hebt de pagina geen toestemming gegeven om de AI te gebruiken.', sampling_disabled: 'De AI is niet beschikbaar voor dit account.', rate_limited: 'Te veel aanvragen of je gebruikslimiet is bereikt. Probeer het later opnieuw.', session_expired: 'Je bent afgemeld. Meld je opnieuw aan.', refused: 'De AI weigerde deze vraag. Formuleer ze anders.', invalid_json: 'De AI kreeg het schema niet rond. Probeer de vraag eenvoudiger of in kleinere stappen.', bad_key: 'De API-sleutel werkt niet. Controleer hem bij Instellingen.', network: 'Geen verbinding met de AI-dienst.', overloaded: 'De AI-dienst is even overbelast. Probeer het zo opnieuw.',
+    upstream_error: 'Er was een storing bij de AI-dienst. Probeer het zo opnieuw.', empty_completion: 'De AI gaf geen antwoord. Probeer de vraag eenvoudiger te stellen.', prompt_too_large: 'Het project is te groot om in één keer naar de AI te sturen.', capability_disabled: 'De AI is hier niet beschikbaar.', not_declared: 'De AI is hier niet beschikbaar.' };
   function apiKey() { return S.apiKey || lsGet('lazyelectrical.v2.apikey', ''); }
   function aiMode() { return SAMPLE && !aiBlocked ? 'claude.ai' : apiKey() ? 'key' : 'manual'; }
   function aiSettingsHtml() {
-    return '<div class="form"><label for="ai_key">Eigen API-sleutel (Claude)</label><input id="ai_key" type="password" autocomplete="off" placeholder="sk-ant-…" value="' + esc(apiKey()) + '">' +
-      '<label for="ai_model">Model</label><select id="ai_model">' + [['claude-opus-5-5', 'Claude Opus 5.5 (beste ontwerpen)'], ['claude-sonnet-5-5', 'Claude Sonnet 5.5 (sneller, goedkoper)'], ['claude-haiku-5-5', 'Claude Haiku 5.5 (snelst, eenvoudige vragen)']].map((m) => '<option value="' + m[0] + '"' + (S.prefs.model === m[0] ? ' selected' : '') + '>' + m[1] + '</option>').join('') + '</select>' +
+    return '<div class="form"><label for="ai_key">API-sleutel</label><input id="ai_key" type="password" autocomplete="off" value="' + esc(apiKey()) + '">' +
+      '<label for="ai_model">Model</label><select id="ai_model">' + [['claude-opus-5-5', 'Beste ontwerpen'], ['claude-sonnet-5-5', 'Sneller, goedkoper'], ['claude-haiku-5-5', 'Snelst, eenvoudige vragen']].map((m) => '<option value="' + m[0] + '"' + (S.prefs.model === m[0] ? ' selected' : '') + '>' + m[1] + '</option>').join('') + '</select>' +
       '<label for="ai_remember">Sleutel onthouden</label><label style="color:var(--ink)"><input id="ai_remember" type="checkbox"' + (S.prefs.remember ? ' checked' : '') + ' style="width:auto"> in deze browser bewaren</label></div>' +
-      '<p><button class="btn primary" type="button" id="ai_savekey">Bewaren</button></p><p class="note">Op claude.ai gebruikt de assistent je eigen Claude-account en heb je geen sleutel nodig. Elders (bv. de GitHub-pagina of het bestand op je computer) kun je een eigen API-sleutel van console.anthropic.com gebruiken; de sleutel gaat dan rechtstreeks van je browser naar Anthropic en wordt alleen in deze browser bewaard als je dat aanvinkt. Zonder sleutel maakt de assistent een opdracht die je in een Claude-gesprek plakt.</p>';
+      '<p><button class="btn primary" type="button" id="ai_savekey">Bewaren</button></p><p class="note">De sleutel gaat rechtstreeks van je browser naar de AI-dienst en wordt alleen in deze browser bewaard als je dat aanvinkt. Zonder sleutel maakt de assistent een opdracht die je in een AI-chat plakt.</p>';
   }
   function saveAiSettings() {
     const k = $('#ai_key') ? $('#ai_key').value.trim() : apiKey();
     S.prefs.model = $('#ai_model') ? $('#ai_model').value : S.prefs.model; S.prefs.remember = $('#ai_remember') ? $('#ai_remember').checked : S.prefs.remember; savePrefs();
     S.apiKey = k; if (S.prefs.remember && k) lsSet('lazyelectrical.v2.apikey', k); else lsSet('lazyelectrical.v2.apikey', '');
-    toast(k ? 'AI-instellingen bewaard.' : 'Geen sleutel: de assistent werkt via kopiëren en plakken (of op claude.ai).'); renderAI();
+    toast(k ? 'AI-instellingen bewaard.' : 'Geen sleutel: de assistent werkt via kopiëren en plakken.'); renderAI();
   }
   function rules() { const r = lsGet(RULES, []); return (Array.isArray(r) ? r : String(r).split('\n')).map((x) => String(x).trim()).filter(Boolean); }
   function renderAI() {
     const mode = aiMode(), b = $('#aiBody');
-    const modeTxt = mode === 'claude.ai' ? 'Verbonden met je Claude-account (claude.ai).' : mode === 'key' ? 'Gebruikt je eigen API-sleutel · ' + S.prefs.model : 'Geen directe verbinding: de assistent maakt een opdracht om in een Claude-gesprek te plakken. Stel een API-sleutel in bij Bestand → Instellingen voor directe antwoorden.';
+    const modeTxt = mode === 'claude.ai' ? 'Verbonden met je AI-account.' : mode === 'key' ? 'Gebruikt je eigen API-sleutel.' : 'Geen directe verbinding: de assistent maakt een opdracht om in een AI-chat te plakken. Stel een API-sleutel in bij Bestand → Instellingen voor directe antwoorden.';
     const rl = rules();
     b.innerHTML = '<div class="ai"><div class="f"><label for="aiText" style="font-weight:600">Wat moet de assistent doen?</label></div><textarea id="aiText" placeholder="Bv. Een pomp die start met een drukknop en stopt met een vlotter, met noodstop, thermische beveiliging en signaallampen. Of: voeg een tweede startknop toe op blad 3."></textarea>' +
       '<div class="row"><button class="btn primary" type="button" id="aiGo">Ontwerpen / wijzigen</button><button class="btn" type="button" id="aiAsk">Vraag stellen</button><button class="btn" type="button" id="aiStop" hidden>Stoppen</button><button class="btn" type="button" id="aiUndo" hidden>Ongedaan maken</button></div>' +
@@ -1142,15 +1142,15 @@
   function manualAI(opts) {
     const prompt = AI.buildPrompt(opts) + '\n\nAntwoord met ALLEEN het JSON-object.';
     const m = $('#aiManual'); m.hidden = false;
-    m.innerHTML = '<div class="f"><label for="aiPrompt">1. Kopieer deze opdracht en plak ze in een gesprek met Claude</label><textarea id="aiPrompt" rows="4" readonly style="font-family:var(--f-mono);font-size:11px;min-height:0"></textarea></div><div class="row"><button class="btn" type="button" id="aiCopy">Opdracht kopiëren</button></div><div class="f"><label for="aiAnswer">2. Plak hier het antwoord van Claude</label><textarea id="aiAnswer" rows="4" style="min-height:0"></textarea></div><div class="row"><button class="btn primary" type="button" id="aiLoad">Antwoord laden</button></div>';
+    m.innerHTML = '<div class="f"><label for="aiPrompt">1. Kopieer deze opdracht en plak ze in een AI-chat</label><textarea id="aiPrompt" rows="4" readonly style="font-family:var(--f-mono);font-size:11px;min-height:0"></textarea></div><div class="row"><button class="btn" type="button" id="aiCopy">Opdracht kopiëren</button></div><div class="f"><label for="aiAnswer">2. Plak hier het antwoord van de AI</label><textarea id="aiAnswer" rows="4" style="min-height:0"></textarea></div><div class="row"><button class="btn primary" type="button" id="aiLoad">Antwoord laden</button></div>';
     $('#aiPrompt').value = prompt;
-    $('#aiCopy').onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(prompt).then(() => toast('Opdracht gekopieerd. Plak ze in Claude.')) : Promise.reject()).catch(() => { $('#aiPrompt').select(); toast('Geselecteerd: druk op Ctrl+C.'); });
+    $('#aiCopy').onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(prompt).then(() => toast('Opdracht gekopieerd. Plak ze in je AI-chat.')) : Promise.reject()).catch(() => { $('#aiPrompt').select(); toast('Geselecteerd: druk op Ctrl+C.'); });
     $('#aiLoad').onclick = () => {
       try {
         const res = AI.apply(P(), AI.parse($('#aiAnswer').value));
         res.attempts = 1; res.remaining = AI.mustFix(res); res.warnings = res.checks.filter((c) => c.level === 'warn').map((c) => c.msg);
         m.hidden = true; m.innerHTML = ''; showAiResult(res);
-        if (res.remaining.length) aiStatus($('#aiStatus').textContent + '\n\nWil je dat Claude de fouten verbetert? Plak dan deze fouten terug in het gesprek:\n- ' + res.remaining.join('\n- '));
+        if (res.remaining.length) aiStatus($('#aiStatus').textContent + '\n\nWil je dat de AI de fouten verbetert? Plak dan deze fouten terug in het gesprek:\n- ' + res.remaining.join('\n- '));
       } catch (e) { aiStatus('Dat antwoord kon niet geladen worden: ' + e.message + '. Plak het volledige antwoord (het JSON-blok).', true); }
     };
     aiStatus('');
