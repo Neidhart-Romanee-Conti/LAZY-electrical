@@ -1056,13 +1056,13 @@
     const mode = aiMode(), b = $('#aiBody');
     const modeTxt = mode === 'claude.ai' ? 'Verbonden met je AI-account.' : mode === 'key' ? 'Gebruikt je eigen API-sleutel.' : 'Geen directe verbinding: de assistent maakt een opdracht om in een AI-chat te plakken. Stel een API-sleutel in bij Bestand → Instellingen voor directe antwoorden.';
     const rl = rules();
-    b.innerHTML = '<div class="ai"><div class="f"><label for="aiText" style="font-weight:600">Wat moet de assistent doen?</label></div><textarea id="aiText" placeholder="Bv. Een pomp die start met een drukknop en stopt met een vlotter, met noodstop, thermische beveiliging en signaallampen. Of: voeg een tweede startknop toe op blad 3."></textarea>' +
+    b.innerHTML = '<div class="ai"><div class="f"><label for="aiText" style="font-weight:600">Wat moet de assistent doen?</label></div><textarea id="aiText"></textarea>' +
       '<div class="row"><button class="btn primary" type="button" id="aiGo">Ontwerpen / wijzigen</button><button class="btn" type="button" id="aiAsk">Vraag stellen</button><button class="btn" type="button" id="aiStop" hidden>Stoppen</button><button class="btn" type="button" id="aiUndo" hidden>Ongedaan maken</button></div>' +
       '<div class="aistatus" id="aiStatus"></div><div id="aiManual" hidden></div>' +
       '<p class="hint">' + esc(modeTxt) + '</p>' +
       '<p class="hint">De assistent ontwerpt met stroompaden en past de tekening aan met bewerkingen op het raster; het programma controleert alles en stuurt fouten terug tot het klopt (maximaal 3 rondes). Alles kan ongedaan gemaakt worden.</p>' +
       '<details' + (rl.length ? ' open' : '') + '><summary>Eigen ontwerpregels (' + rl.length + ')</summary><div class="rules" style="margin-top:6px">' + rl.map((r, i) => '<div class="rl"><span>' + esc(r) + '</span><button type="button" data-rdel="' + i + '" aria-label="Regel verwijderen">×</button></div>').join('') +
-      '<div class="row"><input id="ruleNew" placeholder="Bv. Gebruik altijd 24V DC stuurspanning" style="flex:1;border:1px solid var(--line);border-radius:3px;padding:4px 6px" aria-label="Nieuwe regel"><button class="btn" type="button" id="ruleAdd">Toevoegen</button></div></div></details></div>';
+      '<div class="row"><input id="ruleNew" style="flex:1;border:1px solid var(--line);border-radius:3px;padding:4px 6px" aria-label="Nieuwe regel"><button class="btn" type="button" id="ruleAdd">Toevoegen</button></div></div></details></div>';
   }
   function aiStatus(t, err) { const s = $('#aiStatus'); if (!s) return; s.className = 'aistatus' + (err ? ' err' : ''); s.textContent = t || ''; }
   /* the three ways to reach Claude */
