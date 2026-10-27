@@ -130,9 +130,9 @@ test('model: save and load round trip', () => {
 });
 
 /* ---------- automatic layout of every example ---------- */
-/* school examples are built from the short school format, the others from page descriptions */
-const build = (ex) => (ex.school ? LE.school.buildProject(ex.school) : LE.auto.buildProject(ex.spec));
-const pagesOf = (ex) => (ex.school ? LE.school.build(ex.school).spec.pages : ex.spec.pages);
+/* standard examples are built from the short standard format, the others from page descriptions */
+const build = (ex) => (ex.standard ? LE.standard.buildProject(ex.standard) : LE.auto.buildProject(ex.spec));
+const pagesOf = (ex) => (ex.standard ? LE.standard.build(ex.standard).spec.pages : ex.spec.pages);
 for (const ex of LE.examples) {
   test('layout: ' + ex.name, () => {
     const r = build(ex);
@@ -270,18 +270,18 @@ test('ai: ops change an existing project without touching other pages', () => {
   assert.equal(r.P.pages.length, P.pages.length + 1);
   assert.equal(P.pages.length, 3, 'original project is not changed');
 });
-test('ai: a school answer builds the fixed sheet set and is shown back for changes', () => {
-  const school = LE.examples.find((e) => e.id === 'school_rev').school;
-  const r = LE.ai.apply(M.newProject(), { school, _uitleg: 'ok' });
+test('ai: a standard answer builds the standard sheet set and is shown back for changes', () => {
+  const std = LE.examples.find((e) => e.id === 'std_rev').standard;
+  const r = LE.ai.apply(M.newProject(), { standard: std, _uitleg: 'ok' });
   assert.deepEqual(plain(LE.ai.mustFix(r)), []);
   assert.deepEqual(plain(r.P.pages.map((p) => p.title)), ['Voedingsblad', 'Stuurschakeling', 'Ingangen', 'Uitgangen', 'Vermogenblad']);
-  assert.match(LE.ai.buildPrompt({ P: r.P, question: 'voeg een lamp toe' }), /SCHOOLPROJECT: \{/);
-  const extra = Object.assign({}, school, { extraPages: [{ title: 'Verlichting', top: ['1L1'], bottom: ['1N'], paths: [{ from: '1L1', to: '1N', chain: [{ s: 'sel_no', tag: 'S30', desc: 'LICHT' }, { s: 'lamp', tag: 'P30', desc: 'VERLICHTING' }] }] }] });
-  const r3 = LE.ai.apply(M.newProject(), { school: extra });
+  assert.match(LE.ai.buildPrompt({ P: r.P, question: 'voeg een lamp toe' }), /STANDAARDPROJECT: \{/);
+  const extra = Object.assign({}, std, { extraPages: [{ title: 'Verlichting', top: ['1L1'], bottom: ['1N'], paths: [{ from: '1L1', to: '1N', chain: [{ s: 'sel_no', tag: 'S30', desc: 'LICHT' }, { s: 'lamp', tag: 'P30', desc: 'VERLICHTING' }] }] }] });
+  const r3 = LE.ai.apply(M.newProject(), { standard: extra });
   assert.deepEqual(plain(LE.ai.mustFix(r3)), []);
   assert.equal(r3.P.pages[r3.P.pages.length - 1].title, 'Verlichting');
-  const bad = JSON.parse(JSON.stringify(school)); bad.outputs = bad.outputs.slice(0, 1);
-  const r2 = LE.ai.apply(M.newProject(), { school: bad });
+  const bad = JSON.parse(JSON.stringify(std)); bad.outputs = bad.outputs.slice(0, 1);
+  const r2 = LE.ai.apply(M.newProject(), { standard: bad });
   assert.ok(LE.ai.mustFix(r2).some((e) => /rol "left" heeft geen PLC-uitgang/.test(e)));
 });
 test('ai: the loop feeds errors back and accepts the corrected answer', async () => {

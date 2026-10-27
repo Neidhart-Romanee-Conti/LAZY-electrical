@@ -21,15 +21,15 @@ LE.ai = (function () {
 
   const FORMAT = [
     'Je bent de AI-assistent van LAZY Electrical, een elektrisch CAD-programma voor stroomschema\'s van schakelkasten (IEC 60617, tags volgens IEC 81346).',
-    'Je tekent NOOIT zelf. Je beschrijft WAT er in de installatie zit; het programma maakt daar de vaste bladenset van de school van de gebruiker van:',
+    'Je tekent NOOIT zelf. Je beschrijft WAT er in de installatie zit; het programma maakt daar de standaard bladenset van:',
     '  1 Voedingsblad (hoofdautomaat, automaten, 24V-voeding) · 2 Stuurschakeling · 3 Ingangen · 4 Uitgangen (met PLC) · 5 Vermogenblad per motor.',
     'Het programma voegt zelf toe: noodstopkring met lijncontactor, interfacerelais per PLC-uitgang, vergrendelingen bij omkeer en ster-driehoek, X-klemmen, thermische relais, contactnummers, tags per blad en kolom en kruisverwijzingen. Het controleert alles; fouten krijg je terug om te verbeteren.',
     '',
     'ANTWOORD met ALLEEN één JSON-object (geen tekst ervoor of erna, geen commentaar):',
-    '{ "school": schoolproject, "_uitleg": "2-4 korte zinnen in het Nederlands" }',
-    'Bij een wijziging geef je het VOLLEDIGE aangepaste schoolproject terug (het huidige staat onderaan).',
+    '{ "standard": standaardproject, "_uitleg": "2-4 korte zinnen in het Nederlands" }',
+    'Bij een wijziging geef je het VOLLEDIGE aangepaste standaardproject terug (het huidige staat onderaan).',
     '',
-    'SCHOOLPROJECT:',
+    'STANDAARDPROJECT:',
     '{ "info": {"name": "korte projectnaam", "desc1": "omschrijving"},',
     '  "plc": "0BA5" | "24CE" | "24RCE" | "1224RCE" | "none",   (LOGO! 24 0BA5 / 24CE: transistoruitgangen; "none" = bedrade sturing zonder PLC)',
     '  "estop": true | false,   (noodstop aanwezig)',
@@ -57,10 +57,10 @@ LE.ai = (function () {
     '- "Starten vanaf twee plaatsen" = twee startknoppen NO parallel en twee stopknoppen NC in serie (met PLC: als aparte ingangen).',
     '- Signaallampen zonder PLC: een sport met een aux-contact van de contactor en een lamp; storing via het NO-thermisch contact.',
     '- Omschrijvingen kort in HOOFDLETTERS (max ±12 tekens). Maximaal 3 motoren.',
-    '- EXTRA BLADEN: wil de gebruiker iets dat niet in de vaste bladen past (bv. een extra verbruiker, een verlichtingskring, een tweede bedieningspost), voeg dan zelf bladen toe met "extraPages": [blad, ...] in het schoolproject. Een blad in "extraPages" volgt de VRIJE VORM hieronder en komt na de vaste bladen; het mag de potentialen van de vaste bladen gebruiken (+24V, 0V, 1L1, 1N …).',
-    '- Past de hele vraag niet in het schoolformaat (bv. een heel andere bladindeling), gebruik dan alleen de VRIJE VORM en zeg dat in "_uitleg".',
+    '- EXTRA BLADEN: wil de gebruiker iets dat niet in de vaste bladen past (bv. een extra verbruiker, een verlichtingskring, een tweede bedieningspost), voeg dan zelf bladen toe met "extraPages": [blad, ...] in het standaardproject. Een blad in "extraPages" volgt de VRIJE VORM hieronder en komt na de vaste bladen; het mag de potentialen van de vaste bladen gebruiken (+24V, 0V, 1L1, 1N …).',
+    '- Past de hele vraag niet in het standaardformaat (bv. een heel andere bladindeling), gebruik dan alleen de VRIJE VORM en zeg dat in "_uitleg".',
     '',
-    'VRIJE VORM (alleen als het schoolformaat niet past): { "project": { "info": {...}, "cover": false, "pages": [ blad, ... ] }, "_uitleg": "..." }',
+    'VRIJE VORM (alleen als het standaardformaat niet past): { "project": { "info": {...}, "cover": false, "pages": [ blad, ... ] }, "_uitleg": "..." }',
     '  blad = { "title": "...", "top": ["1L1"], "mid": [...], "bottom": ["1N"], "paths": [pad, ...] }',
     '  1-polig pad: { "from": "1L1", "to": "1N" (of "out": "NAAM" = doorverwijspijl), "chain": [ {"s": "<symbool-id>", "tag": "S1", "desc": "START"}, {"par": [[...],[...]]}, ... ] }',
     '  meerpolig pad: { "from": ["L1","L2","L3"], "to": [...] of "out": [...], "pe": "PE", "chain": [ ... ] }; motorstarters: { "macro": "dol"|"rev"|"yd", "from": [...], "pe": "PE", "breaker": false, "pre": [...], "ol": {...}, "term": {...}, "motor": {...} }',
@@ -70,18 +70,19 @@ LE.ai = (function () {
 
   function example() {
     const ex = (id) => (LE.examples || []).find((e) => e.id === id);
-    const a = ex('school_rev'), b = ex('school_dol');
-    return (a ? 'VOORBEELD 1 — "loopband links/rechts met LOGO!, noodstop, start rechts, start links, stop, thermische beveiliging":\n' + JSON.stringify({ school: a.school, _uitleg: 'Omkeerschakeling met LOGO! 24: vijf ingangen, twee uitgangen naar de contactoren rechts en links.' }) + '\n\n' : '') +
-      (b ? 'VOORBEELD 2 — "loopband direct starten zonder PLC, met noodstop, lampen aan/uit en een bewegingsmelder met lamp":\n' + JSON.stringify({ school: b.school, _uitleg: 'Bedrade start/stop met houdcontact en signaallampen.' }) : '');
+    const a = ex('std_rev'), b = ex('std_dol');
+    return (a ? 'VOORBEELD 1 — "loopband links/rechts met LOGO!, noodstop, start rechts, start links, stop, thermische beveiliging":\n' + JSON.stringify({ standard: a.standard, _uitleg: 'Omkeerschakeling met LOGO! 24: vijf ingangen, twee uitgangen naar de contactoren rechts en links.' }) + '\n\n' : '') +
+      (b ? 'VOORBEELD 2 — "loopband direct starten zonder PLC, met noodstop, lampen aan/uit en een bewegingsmelder met lamp":\n' + JSON.stringify({ standard: b.standard, _uitleg: 'Bedrade start/stop met houdcontact en signaallampen.' }) : '');
   }
   function specText() { return FORMAT.replace('%CATALOG%', catalog()); }
 
   /* the current project as the AI sees it: page descriptions (or a summary of hand-drawn pages) and the open errors */
   function projectText(P) {
     if (!P || !P.pages.some((p) => p.kind !== 'cover')) return '(leeg project)';
-    if (P.school) {
+    const std = P.standard || P.school; // projects saved before the rename keep their description under "school"
+    if (std) {
       const hand = P.pages.filter((p) => p.edited).map(M.pageLabel);
-      return 'SCHOOLPROJECT: ' + JSON.stringify(P.school) + (hand.length ? '\nLET OP: blad ' + hand.join(', ') + ' werd met de hand aangepast; een nieuw schoolproject tekent alles opnieuw.' : '');
+      return 'STANDAARDPROJECT: ' + JSON.stringify(std) + (hand.length ? '\nLET OP: blad ' + hand.join(', ') + ' werd met de hand aangepast; een nieuw standaardproject tekent alles opnieuw.' : '');
     }
     const s = AU.projectSpec(P);
     const errs = CK.run(P).filter((c) => c.level === 'error').map((c) => c.msg);
@@ -125,9 +126,10 @@ LE.ai = (function () {
     const errors = [];
     let P;
     const spec = reply.project || (Array.isArray(reply.pages) ? reply : null);
-    if (reply.school) {
-      const sp = Object.assign({}, reply.school, { info: Object.assign({}, (P0 && P0.info) || {}, reply.school.info || {}) });
-      const r = LE.school.buildProject(sp);
+    const std = reply.standard || reply.school; // "school" is the key's old name; still accepted
+    if (std) {
+      const sp = Object.assign({}, std, { info: Object.assign({}, (P0 && P0.info) || {}, std.info || {}) });
+      const r = LE.standard.buildProject(sp);
       if (!r.P) throw new Error(r.errors.join('; '));
       P = r.P; errors.push(...r.errors);
       if (P0 && P0.parts) P.parts = P0.parts.slice();
@@ -141,7 +143,7 @@ LE.ai = (function () {
       P = M.clone(P0); P.seq = P0.seq;
       reply.ops.forEach((op, i) => applyOp(P, op, errors, 'operatie ' + (i + 1)));
       if (!errors.length && reply.ops.some((op) => op && (op.op === 'setPage' || op.op === 'addPage' || op.op === 'deletePage'))) AU.retag(P);
-    } else throw new Error('het antwoord bevat geen "school", geen "project" en geen "ops"');
+    } else throw new Error('het antwoord bevat geen "standard", geen "project" en geen "ops"');
     const checks = CK.run(P);
     return { P, errors, checks, uitleg, changed: true };
   }

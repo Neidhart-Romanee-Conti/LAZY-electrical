@@ -1,12 +1,12 @@
 /* Example projects: the "Voorbeelden" in the File menu, test cases for the layout engine and worked examples for the AI.
-   School examples (school: …) use the short school-project format (school.js) that builds the fixed sheet set;
+   Standard examples (standard: …) use the short standard-project format (standard.js) that builds the standard sheet set;
    the others (spec: …) use the free page-description format (auto.js). */
 var LE = typeof LE !== 'undefined' ? LE : {};
 LE.examples = [
   {
     /* the owner's reference drawing: LOGO! 24, reversing conveyor, emergency stop circuit, interface relays */
-    id: 'school_rev', name: 'Omkeerschakeling met LOGO! (school)',
-    school: {
+    id: 'std_rev', name: 'Omkeerschakeling met LOGO!',
+    standard: {
       info: { name: 'Loopband links/rechts met LOGO!', desc1: 'Omkeerschakeling met noodstop', author: 'LAZY' },
       plc: '0BA5', estop: true,
       motors: [{ name: 'LOOPBAND', type: 'REV', breaker: 'C10A' }],
@@ -16,8 +16,8 @@ LE.examples = [
   },
   {
     /* the owner's hard-wired drawing: direct start with emergency stop, lamps and a motion detector */
-    id: 'school_dol', name: 'Direct starten, bedraad (school)',
-    school: {
+    id: 'std_dol', name: 'Direct starten, bedraad',
+    standard: {
       info: { name: 'Loopband direct starten', desc1: 'Bedrade sturing met noodstop en signaallampen', author: 'LAZY' },
       plc: 'none', estop: true,
       motors: [{ name: 'LOOPBAND', type: 'DOL', breaker: 'C10A' }],
@@ -30,8 +30,8 @@ LE.examples = [
     }
   },
   {
-    id: 'school_yd', name: 'Ster-driehoek met LOGO! (school)',
-    school: {
+    id: 'std_yd', name: 'Ster-driehoek met LOGO!',
+    standard: {
       info: { name: 'Ventilator ster-driehoek met LOGO!', desc1: 'Omschakeling ster naar driehoek door de PLC', author: 'LAZY' },
       plc: '24CE', estop: true,
       motors: [{ name: 'VENTILATOR', type: 'YD', breaker: 'C25A', power: '11 kW' }],

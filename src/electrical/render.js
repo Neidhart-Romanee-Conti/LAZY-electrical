@@ -278,7 +278,7 @@ LE.render = (function () {
     const I = P.info, cx = (T.x0 + T.x0 + T.cols * T.colW) / 2, y = T.y0 + (T.y1 - T.y0) * 0.3;
     c.t(cx, y, I.name || 'Project', 2.0, { a: 'middle', bold: true });
     [I.desc1, I.desc2].forEach((d, i) => d && c.t(cx, y + 2.2 + i * 1.3, d, 0.95, { a: 'middle' }));
-    const rows = [['Klant', I.customer], ['Bedrijf / school', I.company], ['Tekeningnummer', I.drawingNo], ['Getekend door', I.author], ['Datum', I.created], ['Revisie', I.revision]].filter((r) => r[1]);
+    const rows = [['Klant', I.customer], ['Bedrijf', I.company], ['Tekeningnummer', I.drawingNo], ['Getekend door', I.author], ['Datum', I.created], ['Revisie', I.revision]].filter((r) => r[1]);
     rows.forEach((r, i) => { c.t(cx - 0.5, y + 6 + i * 1.1, r[0], 0.6, { a: 'end', color: '#444' }); c.t(cx + 0.5, y + 6 + i * 1.1, r[1], 0.6); });
   }
 

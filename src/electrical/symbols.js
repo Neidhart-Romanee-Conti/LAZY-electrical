@@ -221,7 +221,7 @@ LE.symbols = (function () {
   def('plc_do', { name: 'PLC-uitgang', cat: PL, role: 'slave', kind: 'DO', letter: 'K', old: 'A', h: 2, lab: [-1.0, 0.95], pins: [{ n: '1', x: 0, y: 0 }, { n: 'Q1', x: 0, y: 2 }],
     g: [['l', 0, 0, 0, 0.5], ['l', 0, 1.5, 0, 2], ['r', -0.8, 0.5, 1.6, 1.0], ['p', [[-0.15, 1.32], [0, 1.5], [0.15, 1.32]]]] });
 
-  /* letter codes: IEC 81346-2 (default) or the older IEC 60750 style still taught in many schools */
+  /* letter codes: IEC 81346-2 (default) or the older IEC 60750 style still in wide use */
   function letter(id, std) { const s = S[id]; if (!s) return '?'; return std === 'old' && s.old ? s.old : s.letter; }
 
   /* bounding box of a symbol's graphics (unrotated), for hit testing and previews */

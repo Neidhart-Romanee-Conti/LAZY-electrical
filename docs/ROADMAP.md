@@ -41,7 +41,7 @@ This list comes from the published feature matrices of commercial electrical CAD
 - ✅ PDF export of the whole set (A3/A4) including the graphical lists
 - ⬜ PDF bookmarks and clickable cross-references
 - ✅ Project tree with sheet management: add, insert with page index (1a), copy, delete, reorder, renumber, folders
-- 🟡 Title block (one own design; templates per school/company still to do); A3 and A4 formats
+- 🟡 Title block (one own design; templates per company still to do); A3 and A4 formats
 - ✅ Live lists: components, terminals, BOM, contacts, cables, cores, wires, PLC I/O, contents
 - ✅ Jump from a list row to the symbol on its sheet
 - 🟡 Edit components in a table (description, part number, maker) — more columns to come

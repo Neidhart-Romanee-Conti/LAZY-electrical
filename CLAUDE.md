@@ -50,7 +50,7 @@
 - Don't add such texts back. Short labels are enough.
 - Every form section can be collapsed (remembered per browser). In drawing mode (Tekenen) the whole form panel is hidden by default, with a "Formulier tonen" button.
 
-**Drawing conventions (the owner's school layout)**
+**Drawing conventions (the standard sheet set)**
 - A4 landscape, frame with columns 0–9 and rows A–F, title block at the bottom.
 - Sheet order:
   1. supply (voedingsblad: L1–L3/N/PE, main breaker, PSU, breakers);

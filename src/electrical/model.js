@@ -21,7 +21,7 @@ LE.model = (function () {
     return {
       format: 'lazy-electrical', version: 2, seq: 0,
       info: Object.assign({ name: 'Nieuw project', desc1: '', desc2: '', customer: '', drawingNo: '', author: '', company: '', created: today(), revision: 'A', revDate: '', revText: '' }, o.info || {}),
-      /* defaults follow the owner's school layout: A4, tags from sheet + letter + column (2K3) */
+      /* defaults: A4, tags from sheet + letter + column (2K3) */
       settings: Object.assign({ template: 'A4', tagMode: 'pagecol', letters: '81346', wireNo: 'seq', showPinNo: true }, o.settings || {}),
       pages: [], parts: [], extras: [], revisions: []
     };

@@ -1,10 +1,10 @@
-/* LAZY Electrical school projects: a short description of WHAT is in the installation (PLC or not, emergency stop,
-   motors, PLC inputs and outputs, or the contact rungs of a hard-wired control circuit) is turned into the fixed
-   sheet set the owner's school uses, always in the same order and style:
+/* LAZY Electrical standard projects: a short description of WHAT is in the installation (PLC or not, emergency stop,
+   motors, PLC inputs and outputs, or the contact rungs of a hard-wired control circuit) is turned into the standard
+   sheet set, always in the same order and style:
      voedingsblad → stuurschakeling → ingangen → uitgangen → vermogenblad (one per motor).
    The result is a normal page-description project (see auto.js), so layout, checks and lists work as usual.
 
-   School project:
+   Standard project:
    { "info": {...}, "plc": "0BA5" | "24CE" | "none", "estop": true,
      "mainBreaker": "C20A", "b24": "C6A", "b230": "C10A",
      "motors": [ { "name": "LOOPBAND", "type": "DOL" | "REV" | "YD", "breaker": "C10A", "power": "1,5 kW", "thermal": true } ],
@@ -12,7 +12,7 @@
      "outputs": [ { "n": 1, "desc": "MOTOR RECHTS", "load": "M:0:right" } ],            (with a PLC)
      "ladder":  { "rungs": [ rung, ... ] } }                                          (without a PLC) */
 var LE = typeof LE !== 'undefined' ? LE : {};
-LE.school = (function () {
+LE.standard = (function () {
   'use strict';
   const ROLES = { DOL: ['run'], REV: ['right', 'left'], YD: ['main', 'star', 'delta'] };
   const ROLE_NL = { run: '', right: 'RECHTS', left: 'LINKS', main: 'NET', star: 'STER', delta: 'DRIEHOEK' };
@@ -37,7 +37,7 @@ LE.school = (function () {
 
   function build(sp) {
     const errs = [];
-    if (!sp || typeof sp !== 'object') return { spec: null, errors: ['geen schoolproject-object'] };
+    if (!sp || typeof sp !== 'object') return { spec: null, errors: ['geen standaardproject-object'] };
     const plcKey = String(sp.plc || 'none'), plc = PLCS[plcKey] || null, hasPlc = plcKey !== 'none';
     if (hasPlc && !plc) errs.push('onbekende PLC "' + plcKey + '" (gebruik 0BA5, 24CE, 24RCE, 1224RCE of none)');
     const motors = (Array.isArray(sp.motors) ? sp.motors : []).map((m, i) => {
@@ -185,12 +185,12 @@ LE.school = (function () {
     return { spec: { info: sp.info || {}, cover: false, devices, pages }, errors: errs };
   }
 
-  /* the whole project from a school description; the description is kept on the project for later changes */
+  /* the whole project from a standard description; the description is kept on the project for later changes */
   function buildProject(sp) {
     const r = build(sp);
     if (!r.spec) return { P: null, errors: r.errors };
     const b = LE.auto.buildProject(r.spec);
-    if (b.P) { if (b.P.settings.tagMode === 'consecutive') LE.auto.retag(b.P, true); b.P.school = JSON.parse(JSON.stringify(sp)); }
+    if (b.P) { if (b.P.settings.tagMode === 'consecutive') LE.auto.retag(b.P, true); b.P.standard = JSON.parse(JSON.stringify(sp)); }
     return { P: b.P, errors: r.errors.concat(b.errors) };
   }
 
